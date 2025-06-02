@@ -36,6 +36,13 @@ This challenge tasks you with building a critical component of Coruscant Bank's 
 
 Your mission is to implement a robust and reliable backend service that handles the lifecycle of Beskar-backed loans, from application to potential liquidation. This service must seamlessly integrate with existing external services, demonstrating your ability to build interconnected systems.
 
+Your liquidation service for Coruscant Bank must:
+
+1. **accept requests** for new loan applications and for posting collateral
+2. **listen** for prices from two sources to determine which loans to activate or liquidate
+3. **liquidates** loans by selling Beskar
+4. **emits notifications** when events occur
+
 The lifecycle of a loan at Coruscant Bank is:
 
 ```mermaid
@@ -48,8 +55,9 @@ stateDiagram-v2
     Liquidated --> [*]
 ```
 
-Every loan starts as a new application. A new loan can then become active by posting Beskar until its **Loan-to-Value (LTV) ratio is at 50% or lower**. Active loans are potentially subject to liquidation: as the value of Beskar drops, the LTV of loans increases and any loan that reaches 80% LTV must be liquidated: sufficient Beskar must be sold to recoup the amount of GCS that was disbursed to the client.
-To prevent a loan from liquidation, additional Beskar may be posted. After a loan is liquidated, no further actions can be made to it.
+Every loan starts as a new application. A new loan can then become active by posting Beskar until its **Loan-to-Value (LTV) ratio is at 50% or lower**.
+Active loans are potentially subject to liquidation: as the value of Beskar drops, the LTV of loans increases and any loan that reaches 80% LTV must be liquidated: sufficient Beskar must be sold to recoup the amount of GCS that was disbursed to the client.
+To prevent an active loan from liquidation, additional Beskar may be posted. No more Beskar can be posted for loan that has been liquidated.
 If your liquidation service implementation fails to liquidate a loan and its LTV exceeds 100%, Coruscant Bank will incur a financial loss.
 
 ### Technical Requirements
@@ -63,7 +71,6 @@ Your implementation of Coruscant Bank's liquidation service must fulfill the fol
 2. **Loan Management API**: Expose RESTful endpoints for bank representatives to:
     * **Register New Loan Applications**: Allow the creation of new loan requests.
     * **Increase Collateral Balance**: Enable clients to post additional Beskar collateral for an existing loan.
-    * **Get List of Loans**: Provide a comprehensive list of all registered loans and their current status.
 
 3. **Loan Activation**: Automatically mark loans as **active** once 100% of their required Beskar collateral has been successfully posted.
 
