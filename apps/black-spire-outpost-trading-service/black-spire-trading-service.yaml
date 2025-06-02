@@ -1,0 +1,71 @@
+openapi: 3.0.3
+info:
+  title: Trading Service (Black Spire Outpost)
+  version: 1.0.0
+servers:
+  - url: https://batuu-black-spire.local
+paths:
+  /market/orders:
+    post:
+      summary: Place a market trade order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderRequest'
+      responses:
+        '200':
+          description: Trade order response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+components:
+  schemas:
+    OrderRequest:
+      type: object
+      required: [requestId, side, item, amount]
+      properties:
+        requestId:
+          type: string
+        side:
+          type: string
+          enum: [BUY, SELL]
+        item:
+          type: string
+          enum: [BSK]
+        amount:
+          type: number
+          description: Units of item to trade
+    OrderSuccessResponse:
+      type: object
+      required: [requestId, id, side, item, amount, totalPrice]
+      properties:
+        requestId:
+          type: string
+        id:
+          type: string
+        side:
+          type: string
+          enum: [BUY, SELL]
+        item:
+          type: string
+          enum: [BSK]
+        amount:
+          type: number
+        totalPrice:
+          type: number
+          description: Total Galactic Credits traded
+    OrderErrorResponse:
+      type: object
+      required: [requestId, error]
+      properties:
+        requestId:
+          type: string
+        error:
+          type: string
+    OrderResponse:
+      oneOf:
+        - $ref: '#/components/schemas/OrderSuccessResponse'
+        - $ref: '#/components/schemas/OrderErrorResponse'

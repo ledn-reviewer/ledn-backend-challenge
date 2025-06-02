@@ -1,0 +1,93 @@
+openapi: 3.0.3
+info:
+  title: Coruscant Bank OTC Service
+  version: 1.0.0
+servers:
+  - url: https://coruscant-bank-otc.local
+paths:
+  /loan-applications:
+    post:
+      summary: Submit a new loan application
+      requestBody:
+        description: Loan application request
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanApplicationRequest'
+      responses:
+        '202':
+          description: Accepted
+  /collateral-top-ups:
+    post:
+      summary: Submit a collateral top-up
+      requestBody:
+        description: Collateral top-up request
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollateralTopUpRequest'
+      responses:
+        '202':
+          description: Accepted
+  /loan-events:
+    post:
+      summary: Receive loan event notifications
+      requestBody:
+        description: Loan event message
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanEvent'
+      responses:
+        '200':
+          description: Event received
+components:
+  schemas:
+    LoanApplicationRequest:
+      type: object
+      required: [requestId, loanId, amount, borrowerId]
+      properties:
+        requestId:
+          type: string
+        loanId:
+          type: string
+        amount:
+          type: string
+          description: Disbursement amount in Galactic Credits
+        borrowerId:
+          type: string
+    CollateralTopUpRequest:
+      type: object
+      required: [requestId, loanId, borrowerId, amount]
+      properties:
+        requestId:
+          type: string
+        loanId:
+          type: string
+        borrowerId:
+          type: string
+        amount:
+          type: string
+          description: Units of Beskar
+    LoanEvent:
+      type: object
+      required: [eventId, eventType, loanId]
+      properties:
+        eventId:
+          type: string
+        eventType:
+          type: string
+          enum: [application, activation, liquidation]
+        loanId:
+          type: string
+        collateralSold:
+          type: string
+        collateralSoldValue:
+          type: string
+        outstandingCollateral:
+          type: string
+        outstandingBalance:
+          type: string

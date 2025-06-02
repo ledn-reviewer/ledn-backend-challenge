@@ -1,0 +1,88 @@
+openapi: 3.0.3
+info:
+  title: Trading Service (Mos Espa)
+  version: 1.0.0
+servers:
+  - url: https://tatooine-mos-espa.local
+paths:
+  /orders:
+    post:
+      summary: Place a market trade order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderRequest'
+      responses:
+        '200':
+          description: Trade order response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+components:
+  schemas:
+    OrderRequest:
+      type: object
+      required: [requestId, type, side, asset, currency, quantity]
+      properties:
+        requestId:
+          type: string
+        type:
+          type: string
+          enum: [market]
+        side:
+          type: string
+          enum: [buy, sell]
+        asset:
+          type: string
+          enum: [BSK]
+        currency:
+          type: string
+          enum: [GC]
+        quantity:
+          type: string
+          description: Units of asset to trade
+    OrderSuccessResponse:
+      type: object
+      required: [orderId, success, type, side, asset, currency, quantity, price, requestId]
+      properties:
+        orderId:
+          type: string
+        success:
+          type: boolean
+          enum: [true]
+        type:
+          type: string
+          enum: [market]
+        side:
+          type: string
+          enum: [buy, sell]
+        asset:
+          type: string
+          enum: [BSK]
+        currency:
+          type: string
+          enum: [GC]
+        quantity:
+          type: string
+        price:
+          type: string
+        requestId:
+          type: string
+    OrderErrorResponse:
+      type: object
+      required: [success]
+      properties:
+        requestId:
+          type: string
+        success:
+          type: boolean
+          enum: [false]
+        reason:
+          type: string
+    OrderResponse:
+      oneOf:
+        - $ref: '#/components/schemas/OrderSuccessResponse'
+        - $ref: '#/components/schemas/OrderErrorResponse'

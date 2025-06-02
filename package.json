@@ -1,0 +1,24 @@
+{
+  "name": "ledn-backend-challenge",
+  "version": "1.0.0",
+  "description": "Backend challenge for Ledn engineering candidates",
+  "homepage": "https://github.com/ledn-reviewer/ledn-backend-challenge#readme",
+  "bugs": {
+    "url": "https://github.com/ledn-reviewer/ledn-backend-challenge/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ledn-reviewer/ledn-backend-challenge.git"
+  },
+  "license": "ISC",
+  "author": "Ledn",
+  "type": "commonjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "workspaces": [
+    "apps/coruscant-bank-otc-service",
+    "apps/mos-espa-trading-service",
+    "apps/black-spire-outpost-trading-service"
+  ]
+}
