@@ -6,29 +6,39 @@ Welcome to Ledn's Backend Technical Challenge! This challenge was designed to tr
 
 To make this experience engaging and relevant, we've infused the challenge with a touch drawing inspiration from the Star Wars theme.
 
+You are **welcome** to email your contact at Ledn if you have any questions about the challenge.
+
 ## Background
 
-Across the galaxy, there are billions of planets where life can exist — but Beskar, a super-strong metal (also called Mandalorian steel and represented by the symbol BSK), is very rare. It’s so tough that even lightsabers and blasters can't break it, making it extremely valuable.
+Across the galaxy, life thrives on billions of planets, yet **Beskar** also known as the legendary Mandalorian steel (symbol: BSK), remains one of the rarest and most coveted materials. Renowned for its unparalleled strength, Beskar is impervious to lightsabers and blasters, making it a treasure of immense value.
 
-At Coruscant Bank, we offer a special service called Beskar-Backed Loans. If you own Beskar, you can use it to borrow money.
+At Coruscant Bank, we harness the power of Beskar to offer a unique financial service: Beskar-Backed Loans. If you possess Beskar, you can leverage its worth to secure loans in Galactic Credits (symbol: GCS), the universal currency adopted after the fall of the Empire.
 
-We operate across the galaxy, with our main Beskar trading locations in Mos Espa and Black Spire Outpost. From these markets, we track the latest Beskar prices.
+Our operations span the galaxy, with key trading hubs in Mos Espa and Black Spire Outpost. These bustling markets provide real-time Beskar price data, enabling us to maintain precision in our lending process. To ensure financial stability, we adhere to a strict rule: borrowers must pledge collateral worth twice the loan amount. This translates to an initial Loan-to-Value (LTV) ratio of 50%.
 
-Since the fall of the Empire, all loans are given out in Galactic Credits (GCS), the standard currency everyone now uses. Because Beskar prices can change a lot, we follow a strict lending rule to stay safe: You must give twice as much Beskar (in value) as the amount you want to borrow. In other words, we only approve loans when the Loan-to-Value (LTV) ratio is 50%.
+In essence, the LTV formula is simple: `LTV = (Units of Beskar × Current Price of Beskar) ÷ Loan Amount`. By following this principle, we safeguard against the volatility of Beskar prices while empowering clients to unlock the value of their prized metal.
 
-Here’s a simple way to think about it: `LTV = (Your units of Beskar × Current Price of Beskar) ÷ Borrowed Amount`
+## Prerequisites
+
+* Node (v22 or higher) and NPM
+* Docker or Podman
+* LocalStack
 
 ## Getting started
 
-1. Create a new private repository on your personal GitHub account.
-2. Copy the contents of this challenge to your new private repository.
-3. Start the application using `docker compose up` or `podman compose up`
-4. Fulfill the requirements outlined in this challenge.
-5. Commit your changes.
-6. Invite `ledn-reviewer` as a collaborator to your private repository once it is ready for review.
-7. Email your contact at Ledn with a confirmation that `ledn-reviewer` has been added as a contributor and your project is ready for review.
-8. We strongly encourage the use of Generative AI in your development process. However, you are still required to demonstrate understanding of the tradeoffs being made in terms of technology choices, design patterns, and ultimately the source code. Keep in mind that you are the ultimate owner of the code you submit to us for review.
-9. You are welcome to email your contact at Ledn if you have any questions about the challenge.
+1. Create a **private** repository on your personal GitHub account. We ask that you don't fork our repository, or set your repository to **public**, to ensure the integrity of the challenge.
+2. Clone your new private repository locally.
+3. Copy the contents of this challenge to your new private repository.
+4. Add your app to the monorepo using (e.g. `npm init -w ./apps/liquidation-service`).
+5. Install dependencies using `npm install`.
+6. Fulfill the requirements outlined in this document.
+7. Ensure that your code builds, type checks and linting pass, and that your tests pass.
+8. Start the application using `docker compose up` or `podman compose up`.
+9. Commit and push your work to your private repository.
+10. Invite `ledn-reviewer` as a collaborator to your private repository once it is ready for review.
+11. Email your contact at Ledn with a confirmation that `ledn-reviewer` has been added as a contributor and your project is ready for review.
+
+We strongly encourage the use of Generative AI in your development process. However, you are still required to demonstrate understanding of the tradeoffs being made in terms of technology choices, design patterns, and ultimately the source code. Keep in mind that you are the ultimate owner of the code you submit to us for review.
 
 ## The Challenge: Implement Coruscant Bank's Liquidation Service
 
@@ -39,7 +49,7 @@ Your mission is to implement a robust and reliable backend service that handles 
 Your liquidation service for Coruscant Bank must:
 
 1. **accept requests** for new loan applications and for posting collateral
-2. **listen** for prices from two sources to determine which loans to activate or liquidate
+2. **subscribe** to prices from two sources to determine which loans to activate or liquidate
 3. **liquidates** loans by selling Beskar
 4. **emits notifications** when events occur
 
@@ -57,10 +67,35 @@ stateDiagram-v2
 
 Every loan starts as a new application. A new loan can then become active by posting Beskar until its **Loan-to-Value (LTV) ratio is at 50% or lower**.
 Active loans are potentially subject to liquidation: as the value of Beskar drops, the LTV of loans increases and any loan that reaches 80% LTV must be liquidated: sufficient Beskar must be sold to recoup the amount of GCS that was disbursed to the client.
-To prevent an active loan from liquidation, additional Beskar may be posted. No more Beskar can be posted for loan that has been liquidated.
+To prevent an active loan from liquidation, additional Beskar may be posted. After a loan is liquidated posting Beskar for that loan is no longer accepted.
 If your liquidation service implementation fails to liquidate a loan and its LTV exceeds 100%, Coruscant Bank will incur a financial loss.
 
-### Technical Requirements
+### Example
+
+#### Scenario 1: Client applies for a 1000 GCS loan and posts 20 BSK
+
+Loan disbursement amount: 1000 GCS
+Collateral posted: 20 BSK
+Current BSK price: 50 GCS per BSK
+Collateral value: 20 BSK × 50 GCS/BSK = 1000 GCS
+LTV = 1000 GCS ÷ 1000 GCS = 100% (loan cannot be activated yet)
+
+#### Scenario 1: Client posts additional 20 BSK
+
+Loan disbursement amount: 1000 GCS (same as before)
+Additional collateral posted: 20 BSK
+Total collateral posted: 40 BSK
+Current BSK price: 50 GCS per BSK (same as before)
+Collateral value: 40 BSK × 50 GCS/BSK = 2000 GCS
+LTV = 1000 GCS ÷ 2000 GCS = 50% (loan can be activated)
+
+#### Scenario 2: BSK drops in price
+
+If BSK price drops to 31.25 GCS:
+New collateral value: 40 BSK × 31.25 GCS/BSK = 1250 GCS
+New LTV = 1000 GCS ÷ 1250 GCS = 80% (triggers liquidation)
+
+### Functional Requirements
 
 Your implementation of Coruscant Bank's liquidation service must fulfill the following functionalities:
 
@@ -78,10 +113,6 @@ Your implementation of Coruscant Bank's liquidation service must fulfill the fol
 
 5. **Notifications**: Upon successful application, activation, or liquidation of a loan, simultaneously notify Coruscant Bank by publishing events to the `coruscant-bank-loan-events` SNS topic.
 
-### External Integration Notes
-
-Requests to sell Beskar for liquidation purposes must be made using HTTP requests to either Mos Espa or Black Spire Outpost. Be prepared for real-world scenarios: these external trading services are designed to **randomly fail approximately 30% of the time**.
-
 ### Non-Functional Requirements
 
 Your solution must adhere to the following critical constraints:
@@ -94,6 +125,20 @@ Your solution must adhere to the following critical constraints:
 * **Auditing**: A complete history of all operations (loan applications, collateral postings, liquidations, trade orders) must be meticulously kept. It's not necessary to implement endpoints to see this data.
 * **Scalability**: It must be **possible** to run multiple instances of the service without interference.
 
+### Out Of Scope
+
+You are **not required** to do the following:
+
+* Implement a user interface for your liquidation service
+* Detect and handle flash crashes on the price of BSK
+* Calculate interest accrual on loaned amounts
+* Adding a spread, padding prices, or charging fees when selling Beskar
+* Implement an accounting system to handle movement of BSK or GCS
+* Returning collateral after liquidating a loan
+
+### External Integration Notes
+
+Requests to sell Beskar for liquidation purposes must be made using HTTP requests to either Mos Espa or Black Spire Outpost. Be prepared for real-world scenarios: these external trading services are designed to **randomly slow down or fail approximately 30% of the time**.
 ## Evaluation Criteria
 
 Your solution will be evaluated on the following aspects:
@@ -105,9 +150,8 @@ Your solution will be evaluated on the following aspects:
 * **Scalability and Performance Considerations**: While not a full-scale production system, consider how your design choices would impact scalability and performance.
 * **Testing**: Evidence of comprehensive unit, and integration tests to ensure the reliability of your service.
 * **Documentation**: Clear and concise documentation explaining your architecture, design choices, and how to run and test your solution.
-* **Generative AI**: How well does the candidate leverage the use of AI during the coding process.
-
-## Existing Services
+* **Observability**: Ensure the service is designed to allow effective diagnosis of issues that span across multiple services. This includes implementing mechanisms for monitoring and tracking the health and behavior of the system.
+* **Generative AI**: How well do you leverage the use of AI to your advantage.
 
 As part of this challenge, you will be provided with source code and a Compose file to spin up several existing services. Your solution **must integrate with these services** but **must not modify or use their internal source code directly**. We will make use of LocalStack to emulating some AWS cloud services locally.
 
@@ -165,7 +209,7 @@ This service also manages an order book and simulates trading activity, but spec
 * **Order Book & Trading Simulation**: Manages an order book and simulates market actors.
 * **Price Events**: Publishes prices to the SNS topic `batuu-black-spire-outpost-price-stream`.
   * **Schema**:
-    * `item`: `STEEL:MANDALORIAN` (equivalent to Beskar) or other.
+    * `item`: `BSK` or other.
     * `time`: `number` of seconds since the Battle of Yavin (same as UNIX Timestamp).
     * `buy`: An `array` of buy price levels.
       * `amount`: `1`, `10`, `50`, or `100` units.
