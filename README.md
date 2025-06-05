@@ -20,7 +20,7 @@ In essence, the LTV formula is simple: `LTV = (Units of Beskar × Current Price 
 
 ## Prerequisites
 
-* Node (v22 or higher) and NPM
+* Node.js (v22 or higher) and NPM
 * Docker or Podman
 * LocalStack
 
@@ -29,7 +29,7 @@ In essence, the LTV formula is simple: `LTV = (Units of Beskar × Current Price 
 1. Create a **private** repository on your personal GitHub account. We ask that you don't fork our repository, or set your repository to **public**, to ensure the integrity of the challenge.
 2. Clone your new private repository locally.
 3. Copy the contents of this challenge to your new private repository.
-4. Add your app to the monorepo using (e.g. `npm init -w ./apps/liquidation-service`).
+4. Add your app to the monorepo (e.g., `npm init -w ./apps/liquidation-service`).
 5. Install dependencies using `npm install`.
 6. Fulfill the requirements outlined in this document.
 7. Ensure that your code builds, type checks and linting pass, and that your tests pass.
@@ -50,7 +50,7 @@ Your liquidation service for Coruscant Bank must:
 
 1. **accept requests** for new loan applications and for posting collateral
 2. **subscribe** to prices from two sources to determine which loans to activate or liquidate
-3. **liquidates** loans by selling Beskar
+3. **liquidate** loans by selling Beskar
 4. **emits notifications** when events occur
 
 The lifecycle of a loan at Coruscant Bank is:
@@ -58,14 +58,14 @@ The lifecycle of a loan at Coruscant Bank is:
 ```mermaid
 stateDiagram-v2
     [*] --> New: Submit Application
-    New --> Active: LTV >= 50%
+    New --> Active: LTV <= 50%
     Active --> Active: Add Collateral AND LTV < 80%
     Active --> Liquidate: LTV >= 80%
     Liquidate --> Liquidated: Beskar Sold
     Liquidated --> [*]
 ```
 
-Every loan starts as a new application. A new loan can then become active by posting Beskar until its **Loan-to-Value (LTV) ratio is at 50% or lower**. Posting Beskar is when a client sending their Beskar to the bank.
+Every loan starts as a new application. A new loan becomes active once the required Beskar collateral has been posted and its **Loan-to-Value (LTV) ratio is 50% or lower**. Posting Beskar is the process by which a client sends their Beskar to the bank as collateral for their loan (i.e. to collateralize their loan).
 Active loans are potentially subject to liquidation: as the value of Beskar drops, the LTV of loans increases and any loan that reaches 80% LTV must be liquidated: sufficient Beskar must be sold to recoup the amount of GCS that was disbursed to the client.
 To prevent an active loan from liquidation, additional Beskar may be posted. After a loan is liquidated posting Beskar for that loan is no longer accepted.
 If your liquidation service implementation fails to liquidate a loan and its LTV exceeds 100%, Coruscant Bank will incur a financial loss.
@@ -151,7 +151,7 @@ Your solution will be evaluated on the following aspects:
 * **Observability**: Ensure the service is designed to allow effective diagnosis of issues that span across multiple services. This includes implementing mechanisms for monitoring and tracking the health and behavior of the system.
 * **Generative AI**: How well do you leverage the use of AI to your advantage.
 
-As part of this challenge, you will be provided with source code and a Compose file to spin up several existing services. Your solution **must integrate with these services** but **must not modify or use their internal source code directly**. We will make use of LocalStack to emulating some AWS cloud services locally.
+As part of this challenge, you will be provided with source code and a Compose file to spin up several existing services. Your solution **must integrate with these services** but **must not modify or use their internal source code directly**, nor should you use their implementation as a guide or inspiration for your own solution. We will make use of LocalStack to emulate some AWS cloud services locally.
 
 ## External Services
 
