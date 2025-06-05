@@ -65,7 +65,7 @@ stateDiagram-v2
     Liquidated --> [*]
 ```
 
-Every loan starts as a new application. A new loan can then become active by posting Beskar until its **Loan-to-Value (LTV) ratio is at 50% or lower**.
+Every loan starts as a new application. A new loan can then become active by posting Beskar until its **Loan-to-Value (LTV) ratio is at 50% or lower**. Posting Beskar is when a client sending their Beskar to the bank.
 Active loans are potentially subject to liquidation: as the value of Beskar drops, the LTV of loans increases and any loan that reaches 80% LTV must be liquidated: sufficient Beskar must be sold to recoup the amount of GCS that was disbursed to the client.
 To prevent an active loan from liquidation, additional Beskar may be posted. After a loan is liquidated posting Beskar for that loan is no longer accepted.
 If your liquidation service implementation fails to liquidate a loan and its LTV exceeds 100%, Coruscant Bank will incur a financial loss.
@@ -74,26 +74,27 @@ If your liquidation service implementation fails to liquidate a loan and its LTV
 
 #### Scenario 1: Client applies for a 1000 GCS loan and posts 20 BSK
 
-Loan disbursement amount: 1000 GCS
-Collateral posted: 20 BSK
-Current BSK price: 50 GCS per BSK
-Collateral value: 20 BSK × 50 GCS/BSK = 1000 GCS
-LTV = 1000 GCS ÷ 1000 GCS = 100% (loan cannot be activated yet)
+* Loan disbursement amount: 1000 GCS
+* Collateral posted: 20 BSK
+* Current BSK price: 50 GCS per BSK
+* Collateral value: 20 BSK × 50 GCS/BSK = 1000 GCS
+* LTV = 1000 GCS ÷ 1000 GCS = 100% (loan cannot be activated yet)
 
-#### Scenario 1: Client posts additional 20 BSK
+#### Scenario 2: Client posts additional 20 BSK
 
-Loan disbursement amount: 1000 GCS (same as before)
-Additional collateral posted: 20 BSK
-Total collateral posted: 40 BSK
-Current BSK price: 50 GCS per BSK (same as before)
-Collateral value: 40 BSK × 50 GCS/BSK = 2000 GCS
-LTV = 1000 GCS ÷ 2000 GCS = 50% (loan can be activated)
+* Loan disbursement amount: 1000 GCS (same as before)
+* Additional collateral posted: 20 BSK
+* Total collateral posted: 40 BSK
+* Current BSK price: 50 GCS per BSK (same as before)
+* Collateral value: 40 BSK × 50 GCS/BSK = 2000 GCS
+* LTV = 1000 GCS ÷ 2000 GCS = 50% (loan can be activated)
 
-#### Scenario 2: BSK drops in price
+#### Scenario 3: BSK drops in price
 
 If BSK price drops to 31.25 GCS:
-New collateral value: 40 BSK × 31.25 GCS/BSK = 1250 GCS
-New LTV = 1000 GCS ÷ 1250 GCS = 80% (triggers liquidation)
+
+* New collateral value: 40 BSK × 31.25 GCS/BSK = 1250 GCS
+* New LTV = 1000 GCS ÷ 1250 GCS = 80% (triggers liquidation)
 
 ### Functional Requirements
 
@@ -136,9 +137,6 @@ You are **not required** to do the following:
 * Implement an accounting system to handle movement of BSK or GCS
 * Returning collateral after liquidating a loan
 
-### External Integration Notes
-
-Requests to sell Beskar for liquidation purposes must be made using HTTP requests to either Mos Espa or Black Spire Outpost. Be prepared for real-world scenarios: these external trading services are designed to **randomly slow down or fail approximately 30% of the time**.
 ## Evaluation Criteria
 
 Your solution will be evaluated on the following aspects:
@@ -154,6 +152,12 @@ Your solution will be evaluated on the following aspects:
 * **Generative AI**: How well do you leverage the use of AI to your advantage.
 
 As part of this challenge, you will be provided with source code and a Compose file to spin up several existing services. Your solution **must integrate with these services** but **must not modify or use their internal source code directly**. We will make use of LocalStack to emulating some AWS cloud services locally.
+
+## External Services
+
+Your liquidation service must integrate with the external services provided.
+The source code provided for the external services (Coruscant Bank OTC Service and Trading Services) **must not be used** as guide or inspiration for your implementation of the liquidation service.
+Requests to sell Beskar for liquidation purposes must be made using HTTP requests to either Mos Espa or Black Spire Outpost. Be prepared for real-world scenarios: these external trading services are designed to **randomly slow down or fail approximately 30% of the time**.
 
 ### Coruscant Bank OTC Service
 
