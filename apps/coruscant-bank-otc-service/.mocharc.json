@@ -1,0 +1,19 @@
+{
+  "extension": ["ts"],
+  "loader": "ts-node/esm",
+  "require": ["chai/register-expect.js"],
+  "spec": ["src/**/*.test.ts"],
+  "recursive": true,
+  "exit": true,
+  "ui": "bdd",
+  "reporter": "spec",
+  "timeout": 10000,
+  "asyncOnly": false,
+  "parallel": false,
+  "watchFiles": ["src/**/*.ts"],
+  "watchIgnore": ["node_modules", "dist"],
+  "checkLeaks": true,
+  "color": true,
+  "forbidPending": false,
+  "ignore": ["node_modules/**/*"]
+}
