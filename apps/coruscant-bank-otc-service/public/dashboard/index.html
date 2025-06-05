@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coruscant Bank OTC Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-900 to-purple-900 text-white min-h-screen">
+    <div class="max-w-7xl mx-auto p-5">
+        <div class="text-center mb-10">
+            <h1 class="text-4xl font-light mb-2 bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-yellow-200">🚀 Actor Simulation Dashboard</h1>
+            <p class="text-lg opacity-80">Real-time monitoring of client actors in the Coruscant Bank OTC Service</p>
+        </div>
+
+        <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-lg p-5 mb-10 border border-white border-opacity-20">
+            <h2 class="text-xl font-semibold mb-4 text-yellow-400">Simulation Controls</h2>
+            <div class="flex flex-wrap gap-3">
+                <button id="startBtn" class="btn-success">Start Simulation</button>
+                <button id="stopBtn" class="btn-danger">Stop Simulation</button>
+                <button id="refreshBtn" class="btn">Refresh</button>
+                <div class="flex items-center gap-2 ml-5">
+                    <span>Status:</span>
+                    <div id="statusDot" class="status-dot stopped"></div>
+                    <span id="statusText">Stopped</span>
+                </div>
+            </div>
+
+            <div class="mt-5">
+                <div class="flex items-center gap-2 mb-3">
+                    <label class="whitespace-nowrap" style="min-width: 120px;">Actor Count:</label>
+                    <input type="range" id="actorCountSlider" min="1" max="20" value="10" class="flex-grow accent-blue-500">
+                    <span id="actorCountValue" class="w-10 text-right">10</span>
+                </div>
+                <div class="flex items-center gap-2 mb-3">
+                    <label class="whitespace-nowrap" style="min-width: 120px;">Action Interval (ms):</label>
+                    <input type="range" id="actionIntervalSlider" min="500" max="5000" step="100" value="1000" class="flex-grow accent-blue-500">
+                    <span id="actionIntervalValue" class="w-10 text-right">1000</span>
+                </div>
+                <button id="applySettingsBtn" class="btn mt-2">Apply Settings</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-10">
+            <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-lg p-5 border border-white border-opacity-20">
+                <div class="flex items-center">
+                    <div id="currentPrice" class="text-3xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-emerald-300">--</div>
+                    <div id="priceChange" class="ml-2 text-sm font-semibold" style="display: none;"></div>
+                </div>
+                <div class="text-sm opacity-80">BSK Price</div>
+                <div id="priceTimestamp" class="text-xs opacity-60 mt-1">--</div>
+            </div>
+            <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-lg p-5 border border-white border-opacity-20">
+                <div id="activeActors" class="text-3xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-yellow-200">0</div>
+                <div class="text-sm opacity-80">Active Actors</div>
+            </div>
+            <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-lg p-5 border border-white border-opacity-20">
+                <div id="totalLoans" class="text-3xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-yellow-200">0</div>
+                <div class="text-sm opacity-80">Total Loans</div>
+            </div>
+            <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-lg p-5 border border-white border-opacity-20">
+                <div id="totalTopUps" class="text-3xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-yellow-200">0</div>
+                <div class="text-sm opacity-80">Collateral Top-ups</div>
+            </div>
+            <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-lg p-5 border border-white border-opacity-20">
+                <div id="deadActors" class="text-3xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-yellow-200">0</div>
+                <div class="text-sm opacity-80">Dead Actors</div>
+            </div>
+        </div>
+
+        <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-lg p-5 mb-10 border border-white border-opacity-20">
+            <h2 class="text-xl font-semibold mb-4 text-yellow-400">Performance Metrics</h2>
+            <div class="flex flex-wrap gap-5">
+                <div class="flex-1 min-w-[300px] bg-black bg-opacity-10 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold mb-3 text-yellow-400">Action Execution</h3>
+                    <div class="mb-3">
+                        <div class="flex justify-between mb-2">
+                            <span>Avg. Actions per Actor:</span>
+                            <span id="avgActionsValue">0</span>
+                        </div>
+                        <div class="h-2 bg-white bg-opacity-10 rounded-full overflow-hidden">
+                            <div id="avgActionsBar" class="h-full bg-gradient-to-r from-blue-500 to-indigo-500" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-2">
+                            <span>Success Rate:</span>
+                            <span id="successRateValue">0%</span>
+                        </div>
+                        <div class="h-2 bg-white bg-opacity-10 rounded-full overflow-hidden">
+                            <div id="successRateBar" class="h-full bg-gradient-to-r from-green-400 to-teal-400" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex-1 min-w-[300px] bg-black bg-opacity-10 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold mb-3 text-yellow-400">Loan Activity</h3>
+                    <div class="mb-3">
+                        <div class="flex justify-between mb-2">
+                            <span>Active Loans:</span>
+                            <span id="activeLoansValue">0</span>
+                        </div>
+                        <div class="h-2 bg-white bg-opacity-10 rounded-full overflow-hidden">
+                            <div id="activeLoansBar" class="h-full bg-gradient-to-r from-yellow-400 to-yellow-200" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-2">
+                            <span>Loans per Actor:</span>
+                            <span id="loansPerActorValue">0</span>
+                        </div>
+                        <div class="h-2 bg-white bg-opacity-10 rounded-full overflow-hidden">
+                            <div id="loansPerActorBar" class="h-full bg-gradient-to-r from-purple-500 to-pink-500" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-lg p-5 mb-10 border border-white border-opacity-20">
+            <h2 class="text-xl font-semibold mb-4 text-yellow-400">Actor Overview</h2>
+            <div class="flex flex-wrap gap-3 mb-4">
+                <div class="flex items-center">
+                    <label class="mr-2">Filter by Type:</label>
+                    <select id="actorTypeFilter" class="bg-black bg-opacity-20 text-white border border-white border-opacity-30 rounded-md p-2">
+                        <option value="ALL">All Types</option>
+                        <option value="SHRIMP">Shrimp</option>
+                        <option value="CRAB">Crab</option>
+                        <option value="OCTOPUS">Octopus</option>
+                        <option value="FISH">Fish</option>
+                        <option value="DOLPHIN">Dolphin</option>
+                        <option value="SHARK">Shark</option>
+                        <option value="WHALE">Whale</option>
+                        <option value="HUMPBACK">Humpback</option>
+                    </select>
+                </div>
+                <div class="flex items-center">
+                    <label class="mr-2">Sort By:</label>
+                    <select id="actorSortBy" class="bg-black bg-opacity-20 text-white border border-white border-opacity-30 rounded-md p-2">
+                        <option value="id">ID</option>
+                        <option value="type">Type</option>
+                        <option value="riskTolerance">Risk Tolerance</option>
+                        <option value="actionsPerformed">Actions</option>
+                        <option value="activeLoans">Loans</option>
+                    </select>
+                </div>
+            </div>
+            <div id="actorGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Actor cards will be populated here -->
+            </div>
+        </div>
+
+        <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-lg p-5 mb-10 border border-white border-opacity-20">
+            <h2 class="text-xl font-semibold mb-4 text-yellow-400">Actor Lifecycle</h2>
+            <div class="flex flex-wrap gap-5">
+                <div class="flex-1 min-w-[300px] bg-black bg-opacity-10 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold mb-3 text-yellow-400">Actor Types Distribution</h3>
+                    <div id="actorTypeDistribution" class="flex h-10 rounded-full overflow-hidden">
+                        <!-- Actor type segments will be added here via JS -->
+                    </div>
+                    <div class="flex flex-wrap gap-3 mt-3 text-sm">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-purple-600 rounded-full mr-2"></div>
+                            <span>Shrimp</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-teal-600 rounded-full mr-2"></div>
+                            <span>Crab</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-green-600 rounded-full mr-2"></div>
+                            <span>Octopus</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-yellow-400 rounded-full mr-2"></div>
+                            <span>Fish</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-blue-600 rounded-full mr-2"></div>
+                            <span>Dolphin</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-red-600 rounded-full mr-2"></div>
+                            <span>Shark</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-indigo-600 rounded-full mr-2"></div>
+                            <span>Whale</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-pink-600 rounded-full mr-2"></div>
+                            <span>Humpback</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex-1 min-w-[300px] bg-black bg-opacity-10 p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold mb-3 text-yellow-400">Actor Lifecycle Events</h3>
+                    <div class="flex justify-between mb-4">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold" id="birthRate">0</div>
+                            <div class="text-xs">Births per minute</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold" id="deathRate">0</div>
+                            <div class="text-xs">Deaths per minute</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold" id="averageLifespan">0</div>
+                            <div class="text-xs">Avg. actions before death</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-lg p-5 mb-10 border border-white border-opacity-20">
+            <h2 class="text-xl font-semibold mb-4 text-yellow-400">Real-time Actor Activity</h2>
+            <div class="mb-4">
+                <div class="flex justify-between items-center text-sm mb-2">
+                    <span>Actions over time (10-minute window)</span>
+                    <div class="flex gap-4">
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                            <span>Success</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+                            <span>Failed</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="activityChart" class="h-64 bg-black bg-opacity-20 rounded-lg p-4">
+                    <!-- D3 chart will be rendered here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-lg p-5 mb-10 border border-white border-opacity-20">
+            <h2 class="text-xl font-semibold mb-4 text-yellow-400">Loan Liquidation Risk Distribution</h2>
+            <div class="mb-4">
+                <div class="flex justify-between items-center text-sm mb-2">
+                    <span>Loans by liquidation price (BSK price at which LTV reaches 80%)</span>
+                    <div class="flex gap-4">
+                        <div class="flex items-center">
+                            <div class="w-4 h-3 bg-blue-500 rounded-sm mr-2"></div>
+                            <span>Loan Volume (GCS)</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-4 h-0.5 border-t-2 border-dashed border-green-400 mr-2"></div>
+                            <span>Current Price</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="liquidationChart" class="h-80 bg-black bg-opacity-20 rounded-lg p-4">
+                    <!-- D3 liquidation chart will be rendered here -->
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-lg p-5 mb-10 border border-white border-opacity-20">
+            <h2 class="text-xl font-semibold mb-4 text-yellow-400">Individual Actor Performance</h2>
+            <div id="actorPerformanceContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Actor performance cards will be populated here -->
+            </div>
+        </div>
+
+        <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-lg p-5 mb-10 border border-white border-opacity-20">
+            <h2 class="text-xl font-semibold mb-4 text-yellow-400">Activity Log</h2>
+            <div id="logContainer" class="max-h-[300px] overflow-y-auto">
+                <!-- Log entries will be populated here -->
+            </div>
+        </div>
+
+        <div class="text-center mt-10 opacity-70 text-sm">
+            <p>Coruscant Bank OTC Service - Actor Simulation Dashboard</p>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let isConnected = false;
+        const logs = [];
+        const maxLogs = 50;
+        
+        // Activity chart data
+        let activityData = [];
+        let actorPerformanceData = new Map();
+        const CHART_DURATION = 10 * 60 * 1000; // 10 minutes in milliseconds
+        const CHART_UPDATE_INTERVAL = 30 * 1000; // 30 seconds
+        
+        // Price tracking
+        let lastPrice = null;
+        
+        // D3 chart variables
+        let svg, xScale, yScale, chartWidth, chartHeight;
+        
+        // Liquidation chart variables
+        let liquidationSvg, liquidationXScale, liquidationYScale, liquidationChartWidth, liquidationChartHeight;
+        let currentPriceLine;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeActivityChart();
+            initializeLiquidationChart();
+            initializeWebSocket();
+            setupEventListeners();
+            loadInitialData();
+            startActivityChartUpdates();
+        });
+
+        function setupEventListeners() {
+            // Basic simulation controls
+            document.getElementById('startBtn').addEventListener('click', startSimulation);
+            document.getElementById('stopBtn').addEventListener('click', stopSimulation);
+            document.getElementById('refreshBtn').addEventListener('click', refreshData);
+
+            // Actor settings controls
+            const actorCountSlider = document.getElementById('actorCountSlider');
+            const actionIntervalSlider = document.getElementById('actionIntervalSlider');
+
+            actorCountSlider.addEventListener('input', function() {
+                document.getElementById('actorCountValue').textContent = this.value;
+            });
+
+            actionIntervalSlider.addEventListener('input', function() {
+                document.getElementById('actionIntervalValue').textContent = this.value;
+            });
+
+            document.getElementById('applySettingsBtn').addEventListener('click', updateSimulationSettings);
+
+            // Filtering and sorting
+            document.getElementById('actorTypeFilter').addEventListener('change', filterAndSortActors);
+            document.getElementById('actorSortBy').addEventListener('change', filterAndSortActors);
+        }
+
+        function initializeWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = protocol + '//' + window.location.host + '/dashboard/ws';
+
+            try {
+                ws = new WebSocket(wsUrl);
+
+                ws.onopen = function() {
+                    isConnected = true;
+                    addLog('WebSocket connected', 'success');
+                };
+
+                ws.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        if (data.type === 'activity_event') {
+                            addActivityEvent(data);
+                        } else {
+                            updateDashboard(data);
+                        }
+                    } catch (error) {
+                        addLog('Error parsing WebSocket data: ' + error.message, 'error');
+                    }
+                };
+
+                ws.onclose = function() {
+                    isConnected = false;
+                    addLog('WebSocket disconnected', 'warning');
+                    // Attempt to reconnect after 3 seconds
+                    setTimeout(initializeWebSocket, 3000);
+                };
+
+                ws.onerror = function(error) {
+                    addLog('WebSocket error: ' + error, 'error');
+                };
+            } catch (error) {
+                addLog('Failed to initialize WebSocket: ' + error.message, 'error');
+                // Fall back to polling
+                setInterval(refreshData, 2000);
+            }
+        }
+
+        async function loadInitialData() {
+            await refreshData();
+        }
+
+        async function refreshData() {
+            try {
+                const response = await fetch('/simulation/dashboard-stats');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch dashboard data');
+                }
+                const data = await response.json();
+                updateDashboard(data);
+            } catch (error) {
+                addLog('Error fetching data: ' + error.message, 'error');
+            }
+        }
+
+        async function startSimulation() {
+            try {
+                const response = await fetch('/simulation/start', { method: 'POST' });
+                const result = await response.json();
+                if (result.success) {
+                    addLog('Simulation started successfully', 'success');
+                } else {
+                    addLog('Failed to start simulation: ' + result.message, 'error');
+                }
+                await refreshData();
+            } catch (error) {
+                addLog('Error starting simulation: ' + error.message, 'error');
+            }
+        }
+
+        async function stopSimulation() {
+            try {
+                const response = await fetch('/simulation/stop', { method: 'POST' });
+                const result = await response.json();
+                if (result.success) {
+                    addLog('Simulation stopped successfully', 'success');
+                } else {
+                    addLog('Failed to stop simulation: ' + result.message, 'error');
+                }
+                await refreshData();
+            } catch (error) {
+                addLog('Error stopping simulation: ' + error.message, 'error');
+            }
+        }
+
+        // Store actors data globally for filtering/sorting
+        let currentActorsData = [];
+        let lifecycleStats = {
+            births: { count: 0, timestamp: Date.now() },
+            deaths: { count: 0, timestamp: Date.now() }
+        };
+
+        async function updateSimulationSettings() {
+            const actorCount = document.getElementById('actorCountSlider').value;
+            const actionInterval = document.getElementById('actionIntervalSlider').value;
+
+            try {
+                const response = await fetch('/simulation/configure', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        maxClients: parseInt(actorCount),
+                        actionIntervalMs: parseInt(actionInterval)
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    addLog(`Settings updated: ${actorCount} actors, ${actionInterval}ms interval`, 'success');
+                } else {
+                    addLog('Failed to update settings: ' + result.message, 'error');
+                }
+                await refreshData();
+            } catch (error) {
+                addLog('Error updating settings: ' + error.message, 'error');
+            }
+        }
+
+        function filterAndSortActors() {
+            const typeFilter = document.getElementById('actorTypeFilter').value;
+            const sortBy = document.getElementById('actorSortBy').value;
+
+            // Filter actors
+            let filteredActors = [...currentActorsData];
+            if (typeFilter !== 'ALL') {
+                filteredActors = filteredActors.filter(actor => actor.type === typeFilter);
+            }
+
+            // Sort actors
+            filteredActors.sort((a, b) => {
+                if (sortBy === 'id') return a.id.localeCompare(b.id);
+                if (sortBy === 'type') return a.type.localeCompare(b.type);
+                if (sortBy === 'riskTolerance') return b.riskTolerance - a.riskTolerance;
+                if (sortBy === 'actionsPerformed') return b.actionsPerformed - a.actionsPerformed;
+                if (sortBy === 'activeLoans') return b.activeLoans - a.activeLoans;
+                return 0;
+            });
+
+            // Update grid with filtered and sorted actors
+            updateActorGrid(filteredActors);
+        }
+
+        function updateDashboard(data) {
+            // Update status
+            const isRunning = data.isRunning;
+            document.getElementById('statusDot').className = 'status-dot ' + (isRunning ? 'running' : 'stopped');
+            document.getElementById('statusText').textContent = isRunning ? 'Running' : 'Stopped';
+
+            // Update buttons
+            document.getElementById('startBtn').disabled = isRunning;
+            document.getElementById('stopBtn').disabled = !isRunning;
+
+            // Update current price
+            updateCurrentPrice(data.currentPrice);
+
+            // Update metrics
+            document.getElementById('activeActors').textContent = data.activeClients || 0;
+            document.getElementById('totalLoans').textContent = data.loanApplications || 0;
+            document.getElementById('totalTopUps').textContent = data.collateralTopUps || 0;
+            document.getElementById('deadActors').textContent = data.deadActors || 0;
+
+            // Update liquidation chart
+            updateLiquidationChart(data.loans, data.currentPrice?.price);
+
+            // Update performance metrics
+            updatePerformanceMetrics(data);
+
+            // Update actor lifecycle visualization
+            updateLifecycleVisualization(data);
+
+            // Store actors data for filtering/sorting
+            currentActorsData = data.actors || [];
+
+            // Apply current filter and sort
+            filterAndSortActors();
+
+            // Log the update
+            if (data.lastAction) {
+                addLog('Actor activity: ' + data.lastAction, 'info');
+            }
+        }
+
+        function updateCurrentPrice(priceData) {
+            const priceElement = document.getElementById('currentPrice');
+            const timestampElement = document.getElementById('priceTimestamp');
+            const priceChangeElement = document.getElementById('priceChange');
+            
+            if (priceData && priceData.price !== null && priceData.price !== undefined) {
+                // Format price to 2 decimal places with thousands separators
+                const formattedPrice = new Intl.NumberFormat('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                }).format(priceData.price);
+                
+                priceElement.textContent = formattedPrice;
+                
+                // Show price change if we have a previous price
+                if (lastPrice !== null) {
+                    const change = priceData.price - lastPrice;
+                    const changePercent = ((change / lastPrice) * 100);
+                    
+                    if (Math.abs(change) > 0.01) { // Only show if change is significant
+                        const changeText = `${change >= 0 ? '+' : ''}${changePercent.toFixed(2)}%`;
+                        priceChangeElement.textContent = changeText;
+                        priceChangeElement.className = `ml-2 text-sm font-semibold ${change >= 0 ? 'text-green-400' : 'text-red-400'}`;
+                        priceChangeElement.style.display = 'block';
+                    } else {
+                        priceChangeElement.style.display = 'none';
+                    }
+                } else {
+                    priceChangeElement.style.display = 'none';
+                }
+                
+                lastPrice = priceData.price;
+                
+                // Format timestamp
+                const timestamp = new Date(priceData.timestamp);
+                const timeString = timestamp.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                timestampElement.textContent = timeString;
+            } else {
+                priceElement.textContent = '--';
+                timestampElement.textContent = '--';
+                priceChangeElement.style.display = 'none';
+            }
+        }
+
+        function updatePerformanceMetrics(data) {
+            // Average actions per actor
+            const avgActions = data.performance?.averageActionsPerActor || 0;
+            document.getElementById('avgActionsValue').textContent = avgActions.toFixed(1);
+            document.getElementById('avgActionsBar').style.width = Math.min(100, avgActions * 10) + '%';
+
+            // Success rate (assuming a property exists, otherwise use placeholder)
+            const successRate = data.performance?.successRate || 85; // Placeholder
+            document.getElementById('successRateValue').textContent = successRate.toFixed(1) + '%';
+            document.getElementById('successRateBar').style.width = successRate + '%';
+
+            // Active loans
+            const activeLoans = data.performance?.totalActiveLoans || 0;
+            document.getElementById('activeLoansValue').textContent = activeLoans;
+            document.getElementById('activeLoansBar').style.width = Math.min(100, activeLoans * 5) + '%';
+
+            // Loans per actor
+            const loansPerActor = data.activeClients ? (activeLoans / data.activeClients) : 0;
+            document.getElementById('loansPerActorValue').textContent = loansPerActor.toFixed(2);
+            document.getElementById('loansPerActorBar').style.width = Math.min(100, loansPerActor * 25) + '%';
+        }
+
+        function updateLifecycleVisualization(data) {
+            // Update actor type distribution
+            const actorTypes = {
+                'SHRIMP': { color: '#8b5cf6', count: 0 },
+                'CRAB': { color: '#06b6d4', count: 0 },
+                'OCTOPUS': { color: '#10b981', count: 0 },
+                'FISH': { color: '#f59e0b', count: 0 },
+                'DOLPHIN': { color: '#3b82f6', count: 0 },
+                'SHARK': { color: '#ef4444', count: 0 },
+                'WHALE': { color: '#7c3aed', count: 0 },
+                'HUMPBACK': { color: '#ec4899', count: 0 },
+            };
+
+            // Count actors by type
+            const actors = data.actors || [];
+            actors.forEach(actor => {
+                if (actorTypes[actor.type]) {
+                    actorTypes[actor.type].count++;
+                }
+            });
+
+            // Create distribution visualization
+            const distributionDiv = document.getElementById('actorTypeDistribution');
+            distributionDiv.innerHTML = '';
+
+            if (actors.length === 0) {
+                distributionDiv.innerHTML = '<div class="w-full text-center p-2 opacity-60">No active actors</div>';
+                return;
+            }
+
+            for (const type in actorTypes) {
+                if (actorTypes[type].count > 0) {
+                    const percentage = (actorTypes[type].count / actors.length) * 100;
+                    const segment = document.createElement('div');
+                    segment.style.width = percentage + '%';
+                    segment.style.height = '100%';
+                    segment.style.backgroundColor = actorTypes[type].color;
+                    segment.title = `${type}: ${actorTypes[type].count} (${percentage.toFixed(1)}%)`;
+                    distributionDiv.appendChild(segment);
+                }
+            }
+
+            // Update birth/death rates
+            if (data.deadActors !== undefined) {
+                // Track deaths over time
+                const now = Date.now();
+                const timeElapsed = (now - lifecycleStats.deaths.timestamp) / 1000; // seconds
+
+                if (timeElapsed > 0) {
+                    const newDeaths = data.deadActors - lifecycleStats.deaths.count;
+                    const deathRatePerMinute = (newDeaths / timeElapsed) * 60;
+
+                    document.getElementById('deathRate').textContent = deathRatePerMinute.toFixed(1);
+
+                    // Update tracked values
+                    lifecycleStats.deaths.count = data.deadActors;
+                    lifecycleStats.deaths.timestamp = now;
+                }
+            }
+
+            // Birth rate (if we can track new actors)
+            // For now we'll assume births = deaths to maintain constant population
+            document.getElementById('birthRate').textContent = document.getElementById('deathRate').textContent;
+
+            // Average lifespan (using actions performed before death)
+            document.getElementById('averageLifespan').textContent = '7.5'; // Placeholder, ideally from server
+        }
+
+        function updateActorGrid(actors) {
+            const grid = document.getElementById('actorGrid');
+
+            if (actors.length === 0) {
+                grid.innerHTML = '<p class="text-center opacity-60 col-span-1">No active actors</p>';
+                return;
+            }
+
+            grid.innerHTML = actors.map(actor => `
+                <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-lg p-4 border border-white border-opacity-20">
+                    <div class="flex justify-between items-center mb-3">
+                        <div class="text-sm font-mono bg-black bg-opacity-20 rounded-md px-3 py-1">${actor.id.substring(0, 8)}...</div>
+                        <div class="text-xs font-bold rounded-full px-3 py-1 actor-type type-${actor.type}">${actor.type}</div>
+                    </div>
+                    <div class="text-xs opacity-90">
+                        <div>Risk Tolerance: ${(actor.riskTolerance * 100).toFixed(1)}%</div>
+                        <div>Actions: ${actor.actionsPerformed}/10</div>
+                        <div>Loans: ${actor.activeLoans}</div>
+                        <div>Max Loan: ${actor.maxLoanAmount.toFixed(2)} BSK</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            logs.unshift({ timestamp, message, type });
+
+            // Keep only the latest logs
+            if (logs.length > maxLogs) {
+                logs.splice(maxLogs);
+            }
+
+            updateLogDisplay();
+        }
+
+        function updateLogDisplay() {
+            const container = document.getElementById('logContainer');
+            container.innerHTML = logs.map(log => `
+                <div class="log-entry log-${log.type} text-sm p-2 rounded-md mb-2">
+                    [${log.timestamp}] ${log.message}
+                </div>
+            `).join('');
+        }
+
+        // D3 Activity Chart Functions
+        function initializeActivityChart() {
+            const container = d3.select('#activityChart');
+            const containerNode = container.node();
+            const rect = containerNode.getBoundingClientRect();
+            
+            const margin = { top: 20, right: 30, bottom: 40, left: 50 };
+            chartWidth = rect.width - margin.left - margin.right;
+            chartHeight = rect.height - margin.top - margin.bottom;
+
+            svg = container.append('svg')
+                .attr('width', rect.width)
+                .attr('height', rect.height)
+                .append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            // Initialize scales
+            const now = new Date();
+            xScale = d3.scaleTime()
+                .domain([new Date(now - CHART_DURATION), now])
+                .range([0, chartWidth]);
+
+            yScale = d3.scaleLinear()
+                .domain([0, 10])
+                .range([chartHeight, 0]);
+
+            // Add axes
+            svg.append('g')
+                .attr('class', 'x-axis')
+                .attr('transform', `translate(0,${chartHeight})`)
+                .call(d3.axisBottom(xScale).tickFormat(d3.timeFormat('%H:%M:%S')));
+
+            svg.append('g')
+                .attr('class', 'y-axis')
+                .call(d3.axisLeft(yScale));
+
+            // Add axis labels
+            svg.append('text')
+                .attr('class', 'axis-label')
+                .attr('transform', 'rotate(-90)')
+                .attr('y', 0 - margin.left)
+                .attr('x', 0 - (chartHeight / 2))
+                .attr('dy', '1em')
+                .style('text-anchor', 'middle')
+                .style('fill', 'white')
+                .text('Actions per 30s');
+
+            svg.append('text')
+                .attr('class', 'axis-label')
+                .attr('transform', `translate(${chartWidth / 2}, ${chartHeight + margin.bottom})`)
+                .style('text-anchor', 'middle')
+                .style('fill', 'white')
+                .text('Time');
+
+            // Style the axes
+            svg.selectAll('.domain, .tick line')
+                .style('stroke', 'white')
+                .style('opacity', 0.3);
+            
+            svg.selectAll('.tick text')
+                .style('fill', 'white')
+                .style('opacity', 0.7);
+        }
+
+        function addActivityEvent(event) {
+            const now = new Date();
+            
+            // Add event to activity data
+            activityData.push({
+                timestamp: now,
+                actorId: event.actorId,
+                action: event.action,
+                success: event.success
+            });
+
+            // Update actor performance data
+            if (!actorPerformanceData.has(event.actorId)) {
+                actorPerformanceData.set(event.actorId, {
+                    totalActions: 0,
+                    successfulActions: 0,
+                    failedActions: 0
+                });
+            }
+            
+            const actorData = actorPerformanceData.get(event.actorId);
+            actorData.totalActions++;
+            if (event.success) {
+                actorData.successfulActions++;
+            } else {
+                actorData.failedActions++;
+            }
+
+            // Remove old data (older than 10 minutes)
+            const cutoffTime = now - CHART_DURATION;
+            activityData = activityData.filter(d => d.timestamp > cutoffTime);
+
+            // Update chart immediately if it's a significant event
+            updateActivityChart();
+            updateActorPerformanceCards();
+        }
+
+        function startActivityChartUpdates() {
+            // Update chart every 30 seconds
+            setInterval(updateActivityChart, CHART_UPDATE_INTERVAL);
+        }
+
+        function updateActivityChart() {
+            if (!svg) return;
+
+            const now = new Date();
+            const cutoffTime = now - CHART_DURATION;
+
+            // Update time domain
+            xScale.domain([cutoffTime, now]);
+
+            // Group data by 30-second intervals
+            const intervalMs = 30 * 1000; // 30 seconds
+            const intervals = new Map();
+
+            activityData.forEach(d => {
+                const intervalStart = Math.floor(d.timestamp.getTime() / intervalMs) * intervalMs;
+                const key = intervalStart;
+                
+                if (!intervals.has(key)) {
+                    intervals.set(key, { timestamp: new Date(intervalStart), success: 0, failed: 0 });
+                }
+                
+                const interval = intervals.get(key);
+                if (d.success) {
+                    interval.success++;
+                } else {
+                    interval.failed++;
+                }
+            });
+
+            const chartData = Array.from(intervals.values()).sort((a, b) => a.timestamp - b.timestamp);
+
+            // Update y-scale domain based on data
+            const maxValue = d3.max(chartData, d => d.success + d.failed) || 10;
+            yScale.domain([0, Math.max(maxValue, 10)]);
+
+            // Create stacked data
+            const stackedData = chartData.map(d => ({
+                timestamp: d.timestamp,
+                success: d.success,
+                failed: d.failed,
+                total: d.success + d.failed
+            }));
+
+            // Update axes
+            svg.select('.x-axis').call(d3.axisBottom(xScale).tickFormat(d3.timeFormat('%H:%M:%S')));
+            svg.select('.y-axis').call(d3.axisLeft(yScale));
+
+            // Create stack generator
+            const stack = d3.stack()
+                .keys(['success', 'failed'])
+                .value((d, key) => d[key]);
+
+            const stackedSeries = stack(stackedData);
+
+            // Bind data to bar groups
+            const barGroups = svg.selectAll('.bar-group')
+                .data(stackedData);
+
+            const barGroupsEnter = barGroups.enter()
+                .append('g')
+                .attr('class', 'bar-group');
+
+            const barGroupsMerged = barGroupsEnter.merge(barGroups);
+
+            // Update bar positions
+            barGroupsMerged
+                .attr('transform', d => `translate(${xScale(d.timestamp)}, 0)`);
+
+            // Remove old bars
+            barGroups.exit().remove();
+
+            // Success bars (bottom)
+            const successBars = barGroupsMerged.selectAll('.success-bar')
+                .data(d => [d]);
+
+            successBars.enter()
+                .append('rect')
+                .attr('class', 'success-bar')
+                .merge(successBars)
+                .attr('x', -8)
+                .attr('y', d => yScale(d.success))
+                .attr('width', 16)
+                .attr('height', d => chartHeight - yScale(d.success))
+                .attr('fill', '#10b981');
+
+            successBars.exit().remove();
+
+            // Failed bars (top)
+            const failedBars = barGroupsMerged.selectAll('.failed-bar')
+                .data(d => [d]);
+
+            failedBars.enter()
+                .append('rect')
+                .attr('class', 'failed-bar')
+                .merge(failedBars)
+                .attr('x', -8)
+                .attr('y', d => yScale(d.total))
+                .attr('width', 16)
+                .attr('height', d => yScale(d.success) - yScale(d.total))
+                .attr('fill', '#ef4444');
+
+            failedBars.exit().remove();
+        }
+
+        function updateActorPerformanceCards() {
+            const container = document.getElementById('actorPerformanceContainer');
+            const actors = Array.from(actorPerformanceData.entries()).map(([id, data]) => ({
+                id,
+                ...data,
+                successRate: data.totalActions > 0 ? (data.successfulActions / data.totalActions * 100) : 0
+            }));
+
+            // Sort by total actions (most active first)
+            actors.sort((a, b) => b.totalActions - a.totalActions);
+
+            // Take top 6 most active actors
+            const topActors = actors.slice(0, 6);
+
+            container.innerHTML = topActors.map(actor => `
+                <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-lg p-4 border border-white border-opacity-20">
+                    <div class="text-sm font-mono mb-2">${actor.id.substring(0, 8)}...</div>
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-xs">
+                            <span>Total Actions:</span>
+                            <span class="font-bold">${actor.totalActions}</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span>Successful:</span>
+                            <span class="text-green-400 font-bold">${actor.successfulActions}</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span>Failed:</span>
+                            <span class="text-red-400 font-bold">${actor.failedActions}</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span>Success Rate:</span>
+                            <span class="font-bold">${actor.successRate.toFixed(1)}%</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2">
+                            <div class="bg-green-500 h-2 rounded-full" style="width: ${actor.successRate}%"></div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Show message if no data
+            if (topActors.length === 0) {
+                container.innerHTML = '<p class="text-center opacity-60 col-span-full">No activity data available</p>';
+            }
+        }
+
+        // Liquidation Chart Functions
+        function initializeLiquidationChart() {
+            const container = d3.select('#liquidationChart');
+            const containerNode = container.node();
+            const rect = containerNode.getBoundingClientRect();
+            
+            const margin = { top: 20, right: 30, bottom: 60, left: 70 };
+            liquidationChartWidth = rect.width - margin.left - margin.right;
+            liquidationChartHeight = rect.height - margin.top - margin.bottom;
+
+            liquidationSvg = container.append('svg')
+                .attr('width', rect.width)
+                .attr('height', rect.height)
+                .append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            // Initialize scales
+            liquidationXScale = d3.scaleLinear()
+                .domain([8000, 12000]) // Default BSK price range
+                .range([0, liquidationChartWidth]);
+
+            liquidationYScale = d3.scaleLinear()
+                .domain([0, 1000]) // Default GCS amount range
+                .range([liquidationChartHeight, 0]);
+
+            // Add axes
+            liquidationSvg.append('g')
+                .attr('class', 'x-axis-liquidation')
+                .attr('transform', `translate(0,${liquidationChartHeight})`)
+                .call(d3.axisBottom(liquidationXScale).tickFormat(d => `${d.toLocaleString()}`));
+
+            liquidationSvg.append('g')
+                .attr('class', 'y-axis-liquidation')
+                .call(d3.axisLeft(liquidationYScale));
+
+            // Add axis labels
+            liquidationSvg.append('text')
+                .attr('class', 'axis-label')
+                .attr('transform', 'rotate(-90)')
+                .attr('y', 0 - margin.left)
+                .attr('x', 0 - (liquidationChartHeight / 2))
+                .attr('dy', '1em')
+                .style('text-anchor', 'middle')
+                .style('fill', 'white')
+                .text('Loan Volume (GCS)');
+
+            liquidationSvg.append('text')
+                .attr('class', 'axis-label')
+                .attr('transform', `translate(${liquidationChartWidth / 2}, ${liquidationChartHeight + margin.bottom - 10})`)
+                .style('text-anchor', 'middle')
+                .style('fill', 'white')
+                .text('Liquidation Price (BSK)');
+
+            // Add current price line (initially hidden)
+            currentPriceLine = liquidationSvg.append('line')
+                .attr('class', 'current-price-line')
+                .attr('y1', 0)
+                .attr('y2', liquidationChartHeight)
+                .style('stroke', '#10b981')
+                .style('stroke-width', 2)
+                .style('stroke-dasharray', '5,5')
+                .style('opacity', 0);
+
+            // Style the axes
+            liquidationSvg.selectAll('.domain, .tick line')
+                .style('stroke', 'white')
+                .style('opacity', 0.3);
+            
+            liquidationSvg.selectAll('.tick text')
+                .style('fill', 'white')
+                .style('opacity', 0.7);
+        }
+
+        function updateLiquidationChart(loansData, currentPrice) {
+            if (!liquidationSvg || !loansData || loansData.length === 0) {
+                // Show no data message
+                liquidationSvg.selectAll('.no-data').remove();
+                liquidationSvg.append('text')
+                    .attr('class', 'no-data')
+                    .attr('x', liquidationChartWidth / 2)
+                    .attr('y', liquidationChartHeight / 2)
+                    .style('text-anchor', 'middle')
+                    .style('fill', 'white')
+                    .style('opacity', 0.6)
+                    .text('No active loans');
+                
+                currentPriceLine.style('opacity', 0);
+                return;
+            }
+
+            // Remove no data message
+            liquidationSvg.selectAll('.no-data').remove();
+
+            // Calculate liquidation prices for each loan
+            const liquidationData = loansData.map(loan => {
+                // Liquidation occurs when LTV = 80%
+                // LTV = loanAmount / (collateral * pricePerBSK)
+                // 0.8 = loanAmount / (collateral * liquidationPrice)
+                // liquidationPrice = loanAmount / (collateral * 0.8)
+                const liquidationPrice = loan.amount / (loan.collateral * 0.8);
+                return {
+                    liquidationPrice,
+                    loanAmount: loan.amount
+                };
+            });
+
+            // Create histogram bins
+            const priceRange = d3.extent(liquidationData, d => d.liquidationPrice);
+            const minPrice = Math.max(priceRange[0] - 500, 0);
+            const maxPrice = priceRange[1] + 500;
+            
+            // Update scales based on data
+            liquidationXScale.domain([minPrice, maxPrice]);
+            
+            // Create bins for histogram
+            const numBins = 20;
+            const binWidth = (maxPrice - minPrice) / numBins;
+            const bins = [];
+            
+            for (let i = 0; i < numBins; i++) {
+                const binStart = minPrice + i * binWidth;
+                const binEnd = minPrice + (i + 1) * binWidth;
+                
+                bins.push({
+                    x0: binStart,
+                    x1: binEnd,
+                    volume: 0,
+                    loans: []
+                });
+            }
+
+            // Assign loans to bins
+            liquidationData.forEach(loan => {
+                const binIndex = Math.min(
+                    Math.floor((loan.liquidationPrice - minPrice) / binWidth),
+                    numBins - 1
+                );
+                if (binIndex >= 0) {
+                    bins[binIndex].volume += loan.loanAmount;
+                    bins[binIndex].loans.push(loan);
+                }
+            });
+
+            // Update y-scale based on max volume
+            const maxVolume = d3.max(bins, d => d.volume) || 1000;
+            liquidationYScale.domain([0, maxVolume * 1.1]);
+
+            // Update axes
+            liquidationSvg.select('.x-axis-liquidation')
+                .call(d3.axisBottom(liquidationXScale).tickFormat(d => `${d.toLocaleString()}`));
+            liquidationSvg.select('.y-axis-liquidation')
+                .call(d3.axisLeft(liquidationYScale));
+
+            // Update bars
+            const bars = liquidationSvg.selectAll('.histogram-bar')
+                .data(bins);
+
+            bars.enter()
+                .append('rect')
+                .attr('class', 'histogram-bar')
+                .merge(bars)
+                .attr('x', d => liquidationXScale(d.x0))
+                .attr('y', d => liquidationYScale(d.volume))
+                .attr('width', d => Math.max(0, liquidationXScale(d.x1) - liquidationXScale(d.x0) - 1))
+                .attr('height', d => liquidationChartHeight - liquidationYScale(d.volume))
+                .attr('fill', '#3b82f6')
+                .attr('opacity', 0.7)
+                .on('mouseover', function(event, d) {
+                    // Show tooltip
+                    d3.select(this).attr('opacity', 1);
+                })
+                .on('mouseout', function(event, d) {
+                    d3.select(this).attr('opacity', 0.7);
+                });
+
+            bars.exit().remove();
+
+            // Update current price line
+            if (currentPrice) {
+                currentPriceLine
+                    .attr('x1', liquidationXScale(currentPrice))
+                    .attr('x2', liquidationXScale(currentPrice))
+                    .style('opacity', 1);
+            } else {
+                currentPriceLine.style('opacity', 0);
+            }
+        }
+    </script>
+</body>
+</html>
