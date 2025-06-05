@@ -1,0 +1,52 @@
+default:
+  paths:
+    - 'test'
+  import:
+    - 'test/**/*.ts'
+  loader:
+    - 'ts-node/esm'
+  format:
+    - '@cucumber/pretty-formatter'
+    - 'html:reports/integration-tests.html'
+  parallel: 1
+  retry: 1
+
+api-only:
+  paths:
+    - 'test'
+  import:
+    - 'test/**/*.ts'
+  loader:
+    - 'ts-node/esm'
+  format:
+    - '@cucumber/pretty-formatter'
+  tags: '@api-integration'
+  parallel: 1
+
+comprehensive:
+  paths:
+    - 'test'
+  import:
+    - 'test/**/*.ts'
+  loader:
+    - 'ts-node/esm'
+  format:
+    - '@cucumber/pretty-formatter'
+    - 'html:reports/comprehensive-integration-tests.html'
+  tags: '@comprehensive-integration'
+  parallel: 1
+  retry: 1
+
+self-contained:
+  paths:
+    - 'test'
+  import:
+    - 'test/**/*.ts'
+  loader:
+    - 'ts-node/esm'
+  format:
+    - '@cucumber/pretty-formatter'
+    - 'html:reports/self-contained-integration-tests.html'
+  tags: '@self-contained-integration'
+  parallel: 1
+  retry: 1
