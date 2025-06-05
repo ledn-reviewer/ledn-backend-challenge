@@ -34,7 +34,8 @@ export const CLIENT_SIZE_RANGES: Record<ClientSize, { min: number; max: number }
 export enum ClientActionType {
   CREATE_LOAN = 'CREATE_LOAN',
   TOP_UP_COLLATERAL = 'TOP_UP_COLLATERAL',
-  DIE = 'DIE',
+  BIRTH = 'BIRTH',
+  DEATH = 'DEATH',
   NO_ACTION = 'NO_ACTION',
 }
 

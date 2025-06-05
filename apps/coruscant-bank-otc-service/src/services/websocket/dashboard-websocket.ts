@@ -6,7 +6,8 @@ import logger from '../../utils/logger';
 interface ActivityEventData {
   actorId: string;
   action: string;
-  success: boolean;
+  actionType: string;
+  prettyActionName: string;
   data?: Record<string, unknown>;
   timestamp: string;
 }
@@ -281,6 +282,32 @@ export class DashboardWebSocketService {
   }
 
   /**
+   * Get pretty name for action type
+   */
+  private getPrettyActionName(action: string): string {
+    const actionNames: Record<string, string> = {
+      'CREATE_LOAN': 'Loan Application',
+      'TOP_UP_COLLATERAL': 'Collateral Top-up',
+      'BIRTH': 'Actor Birth',
+      'DEATH': 'Actor Death'
+    };
+    return actionNames[action] || action;
+  }
+
+  /**
+   * Get action type category
+   */
+  private getActionType(action: string): string {
+    const actionTypes: Record<string, string> = {
+      'CREATE_LOAN': 'loan',
+      'TOP_UP_COLLATERAL': 'collateral',
+      'BIRTH': 'lifecycle',
+      'DEATH': 'lifecycle'
+    };
+    return actionTypes[action] || 'unknown';
+  }
+
+  /**
    * Setup event listeners for simulator events
    */
   private setupSimulatorEventListeners(): void {
@@ -289,16 +316,17 @@ export class DashboardWebSocketService {
     
     if (simulatorEvents) {
       simulatorEvents.on('action', (clientId: string, action: string, data?: any) => {
-        // Use actual success/failure from the action data, or default to true for actions without explicit success tracking
-        const success = data?.success !== undefined ? data.success : true;
-        
-        this.broadcastActivityEvent({
-          actorId: clientId,
-          action,
-          success,
-          data,
-          timestamp: new Date().toISOString()
-        });
+        // Only broadcast actions that are actual business operations, not idle time
+        if (action !== 'NO_ACTION') {
+          this.broadcastActivityEvent({
+            actorId: clientId,
+            action,
+            actionType: this.getActionType(action),
+            prettyActionName: this.getPrettyActionName(action),
+            data,
+            timestamp: new Date().toISOString()
+          });
+        }
       });
     }
   }

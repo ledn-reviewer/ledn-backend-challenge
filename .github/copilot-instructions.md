@@ -1,28 +1,26 @@
 - You are an expert TypeScript developer with extensive knowledge of Node.js, AWS, and modern web development practices.
-- Always wait for commands to finish successfully (exit code 0), read the output and handle errors before proceeding
+
+Project Setup & Dependencies:
 - Use Node v22.16.0
-- Use Jest for unit testing
-- Install dependencies with `npm install` instead of directly modifying `package.json`
-- Don't use ESM. But keep import/export syntax for TypeScript files
-- Place unit test files in the same directory as the code they test, don't add a `__tests__` folder, use `.spec.ts` suffix
-- Run unit tests with `npm run test:unit` and integration tests with `npm run test:integration`
-- Use Cucumber for integration tests, write BDD-style feature files in `test/features`, and step files in `test/steps`, use `.feature` and `.step.ts` suffixes respectively
-- Use Node's assert library for assertions in integration tests
-- Use testcontainers and LocalStack for integration tests as needed
-- Use NPM workspaces for monorepo structure (use the -w flag with npm commands)
+- Install dependencies with `npm install` (use npm workspaces with `-w`) and always target the `@latest` versions
 - Prefer running npm commands over npx
-- Always install the latest version of dependencies (use @latest tag)
-- Check TODO.md files for tasks and follow the instructions
-- Mark tasks as complete in TODO.md files when done
-- Always use `error` as variable name for errors and `event` for events
-- Avoid using abbreviations in code
-- Use kebab-case for file names, camelCase for variables and functions, and PascalCase for classes and types
-- Use semicolons at the end of statements
-- Avoid using `any` type in TypeScript, use `unknown` instead
-- Use zod for schema validation
-- Use SOLID principles in code design and ensure it is modular, maintainable and testable
-- Use DDD (Domain-Driven Design) principles in code structure
-- Use the Tell, Don't Ask principle: prefer methods that perform actions over getters that return data
-- Ensure unit test coverage is above 80%
-- Update TODO.md after completing tasks
+
+Code Style & Architecture:
+- Use TypeScript (keep import/export syntax; no ESM modules)
+- File & identifier naming: kebab-case for files, camelCase for variables/functions, PascalCase for classes/types
+- Use semicolons; avoid abbreviations; prefer `unknown` over `any`
+- Use Zod for schema validation
+- Follow SOLID and Domain-Driven Design principles
+- Tell, Don’t Ask: prefer action methods over data getters
+- Always name variables `error` for errors and `event` for events
+
+Testing:
+- Unit tests with Jest: place `.spec.ts` next to code, run with `npm run test:unit`; ensure ≥80% coverage
+- Integration tests with Cucumber BDD: feature files in `test/features`, steps in `test/steps`, run with `npm run test:integration`; use Node’s assert, Testcontainers, and LocalStack
+
+Workflow:
+- Always wait for commands to finish (exit code 0), read output, and handle errors before proceeding
+- Check and update TODO.md files, marking tasks complete as you go
+
+UI:
 - Use Tailwind CSS for styling

@@ -78,6 +78,14 @@ export class ClientActor {
    * Start the actor's lifecycle
    */
   public start(): void {
+    // Emit birth action when actor starts
+    this.emitAction(ClientActionType.BIRTH, {
+      borrowerId: this.state.borrowerId,
+      size: this.state.size,
+      maxLoanAmount: this.state.maxLoanAmount,
+      riskTolerance: this.state.riskTolerance
+    });
+
     // Start the action interval
     this.actionIntervalId = setInterval(
       () => this.performRandomAction(),
@@ -166,7 +174,7 @@ export class ClientActor {
    */
   private die(): void {
     this.stop();
-    this.emitAction(ClientActionType.DIE);
+    this.emitAction(ClientActionType.DEATH);
     this.events.emit('die', this.state.borrowerId);
   }
 

@@ -26,7 +26,8 @@ export class ClientSimulator {
   private statistics: {
     loanApplications: number;
     collateralTopUps: number;
-    deadActors: number;
+    births: number;
+    deaths: number;
   };
 
   /**
@@ -42,7 +43,8 @@ export class ClientSimulator {
     this.statistics = {
       loanApplications: 0,
       collateralTopUps: 0,
-      deadActors: 0
+      births: 0,
+      deaths: 0
     };
 
     // Setup event listeners
@@ -55,29 +57,36 @@ export class ClientSimulator {
   private setupEventListeners(): void {
     // Listen for client actions
     this.events.on('action', (clientId, action) => {
-      switch (action) {
-        case ClientActionType.CREATE_LOAN:
-          this.statistics.loanApplications++;
-          break;
-        case ClientActionType.TOP_UP_COLLATERAL:
-          this.statistics.collateralTopUps++;
-          break;
-        default:
-          break;
+      // Only count actions that are actual business operations, not idle time
+      if (action !== ClientActionType.NO_ACTION) {
+        switch (action) {
+          case ClientActionType.CREATE_LOAN:
+            this.statistics.loanApplications++;
+            break;
+          case ClientActionType.TOP_UP_COLLATERAL:
+            this.statistics.collateralTopUps++;
+            break;
+          case ClientActionType.BIRTH:
+            this.statistics.births++;
+            break;
+          case ClientActionType.DEATH:
+            this.statistics.deaths++;
+            break;
+          default:
+            break;
+        }
       }
     });
 
     // Listen for client deaths
     this.events.on('die', (clientId) => {
-      this.statistics.deadActors++;
-
       // Remove the dead client
       this.clients.delete(clientId);
 
       // Create a new client to replace the dead one
       this.spawnClient();
 
-      logger.info({ clientId, deadActors: this.statistics.deadActors }, 'Client died and was replaced with a new one');
+      logger.info({ clientId, deaths: this.statistics.deaths }, 'Client died and was replaced with a new one');
     });
   }
 
@@ -150,7 +159,7 @@ export class ClientSimulator {
   /**
    * Get current statistics
    */
-  public getStatistics(): Record<string, any> {
+  public getStatistics(): Record<string, unknown> {
     return {
       ...this.statistics,
       activeClients: this.clients.size,
@@ -166,7 +175,7 @@ export class ClientSimulator {
   /**
    * Get detailed statistics including individual actor information
    */
-  public getDetailedStatistics(): Record<string, any> {
+  public getDetailedStatistics(): Record<string, unknown> {
     const actors = Array.from(this.clients.values()).map(client => ({
       id: client.getClientId(),
       type: client.getClientSize(),
@@ -196,7 +205,7 @@ export class ClientSimulator {
   /**
    * Get performance metrics
    */
-  private getPerformanceMetrics(): Record<string, any> {
+  private getPerformanceMetrics(): Record<string, unknown> {
     return {
       averageActionsPerActor: this.clients.size > 0 ?
         Array.from(this.clients.values()).reduce((sum, client) => sum + client.getActionsPerformed(), 0) / this.clients.size : 0,

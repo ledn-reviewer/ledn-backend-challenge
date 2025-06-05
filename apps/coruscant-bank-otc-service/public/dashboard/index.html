@@ -64,8 +64,10 @@
                 <div class="text-sm opacity-80">Collateral Top-ups</div>
             </div>
             <div class="bg-white bg-opacity-10 backdrop-blur-lg rounded-lg p-5 border border-white border-opacity-20">
-                <div id="deadActors" class="text-3xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-yellow-200">0</div>
-                <div class="text-sm opacity-80">Dead Actors</div>
+                <div id="actorBirths" class="text-2xl font-bold mb-1 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-emerald-300">0</div>
+                <div class="text-xs opacity-80">Births</div>
+                <div id="actorDeaths" class="text-2xl font-bold mb-1 bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-red-300">0</div>
+                <div class="text-xs opacity-80">Deaths</div>
             </div>
         </div>
 
@@ -220,12 +222,20 @@
                     <span>Actions over time (10-minute window)</span>
                     <div class="flex gap-4">
                         <div class="flex items-center">
+                            <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                            <span>Loan Applications</span>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
+                            <span>Collateral Top-ups</span>
+                        </div>
+                        <div class="flex items-center">
                             <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                            <span>Success</span>
+                            <span>Actor Birth</span>
                         </div>
                         <div class="flex items-center">
                             <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                            <span>Failed</span>
+                            <span>Actor Death</span>
                         </div>
                     </div>
                 </div>
@@ -496,7 +506,8 @@
             document.getElementById('activeActors').textContent = data.activeClients || 0;
             document.getElementById('totalLoans').textContent = data.loanApplications || 0;
             document.getElementById('totalTopUps').textContent = data.collateralTopUps || 0;
-            document.getElementById('deadActors').textContent = data.deadActors || 0;
+            document.getElementById('actorBirths').textContent = data.births || 0;
+            document.getElementById('actorDeaths').textContent = data.deaths || 0;
 
             // Update liquidation chart
             updateLiquidationChart(data.loans, data.currentPrice?.price);
@@ -632,26 +643,27 @@
             }
 
             // Update birth/death rates
-            if (data.deadActors !== undefined) {
+            if (data.deaths !== undefined && data.births !== undefined) {
                 // Track deaths over time
                 const now = Date.now();
                 const timeElapsed = (now - lifecycleStats.deaths.timestamp) / 1000; // seconds
 
                 if (timeElapsed > 0) {
-                    const newDeaths = data.deadActors - lifecycleStats.deaths.count;
+                    const newDeaths = data.deaths - lifecycleStats.deaths.count;
+                    const newBirths = data.births - lifecycleStats.births.count;
                     const deathRatePerMinute = (newDeaths / timeElapsed) * 60;
+                    const birthRatePerMinute = (newBirths / timeElapsed) * 60;
 
                     document.getElementById('deathRate').textContent = deathRatePerMinute.toFixed(1);
+                    document.getElementById('birthRate').textContent = birthRatePerMinute.toFixed(1);
 
                     // Update tracked values
-                    lifecycleStats.deaths.count = data.deadActors;
+                    lifecycleStats.deaths.count = data.deaths;
                     lifecycleStats.deaths.timestamp = now;
+                    lifecycleStats.births.count = data.births;
+                    lifecycleStats.births.timestamp = now;
                 }
             }
-
-            // Birth rate (if we can track new actors)
-            // For now we'll assume births = deaths to maintain constant population
-            document.getElementById('birthRate').textContent = document.getElementById('deathRate').textContent;
 
             // Average lifespan (using actions performed before death)
             document.getElementById('averageLifespan').textContent = '7.5'; // Placeholder, ideally from server
@@ -774,24 +786,38 @@
                 timestamp: now,
                 actorId: event.actorId,
                 action: event.action,
-                success: event.success
+                actionType: event.actionType,
+                prettyActionName: event.prettyActionName
             });
 
             // Update actor performance data
             if (!actorPerformanceData.has(event.actorId)) {
                 actorPerformanceData.set(event.actorId, {
                     totalActions: 0,
-                    successfulActions: 0,
-                    failedActions: 0
+                    loanApplications: 0,
+                    collateralTopUps: 0,
+                    births: 0,
+                    deaths: 0
                 });
             }
             
             const actorData = actorPerformanceData.get(event.actorId);
             actorData.totalActions++;
-            if (event.success) {
-                actorData.successfulActions++;
-            } else {
-                actorData.failedActions++;
+            
+            // Count by action type
+            switch (event.action) {
+                case 'CREATE_LOAN':
+                    actorData.loanApplications++;
+                    break;
+                case 'TOP_UP_COLLATERAL':
+                    actorData.collateralTopUps++;
+                    break;
+                case 'BIRTH':
+                    actorData.births++;
+                    break;
+                case 'DEATH':
+                    actorData.deaths++;
+                    break;
             }
 
             // Remove old data (older than 10 minutes)
@@ -826,29 +852,46 @@
                 const key = intervalStart;
                 
                 if (!intervals.has(key)) {
-                    intervals.set(key, { timestamp: new Date(intervalStart), success: 0, failed: 0 });
+                    intervals.set(key, { 
+                        timestamp: new Date(intervalStart), 
+                        loanApplications: 0, 
+                        collateralTopUps: 0, 
+                        births: 0, 
+                        deaths: 0 
+                    });
                 }
                 
                 const interval = intervals.get(key);
-                if (d.success) {
-                    interval.success++;
-                } else {
-                    interval.failed++;
+                switch (d.action) {
+                    case 'CREATE_LOAN':
+                        interval.loanApplications++;
+                        break;
+                    case 'TOP_UP_COLLATERAL':
+                        interval.collateralTopUps++;
+                        break;
+                    case 'BIRTH':
+                        interval.births++;
+                        break;
+                    case 'DEATH':
+                        interval.deaths++;
+                        break;
                 }
             });
 
             const chartData = Array.from(intervals.values()).sort((a, b) => a.timestamp - b.timestamp);
 
             // Update y-scale domain based on data
-            const maxValue = d3.max(chartData, d => d.success + d.failed) || 10;
+            const maxValue = d3.max(chartData, d => d.loanApplications + d.collateralTopUps + d.births + d.deaths) || 10;
             yScale.domain([0, Math.max(maxValue, 10)]);
 
             // Create stacked data
             const stackedData = chartData.map(d => ({
                 timestamp: d.timestamp,
-                success: d.success,
-                failed: d.failed,
-                total: d.success + d.failed
+                loanApplications: d.loanApplications,
+                collateralTopUps: d.collateralTopUps,
+                births: d.births,
+                deaths: d.deaths,
+                total: d.loanApplications + d.collateralTopUps + d.births + d.deaths
             }));
 
             // Update axes
@@ -857,68 +900,65 @@
 
             // Create stack generator
             const stack = d3.stack()
-                .keys(['success', 'failed'])
+                .keys(['loanApplications', 'collateralTopUps', 'births', 'deaths'])
                 .value((d, key) => d[key]);
 
             const stackedSeries = stack(stackedData);
 
-            // Bind data to bar groups
-            const barGroups = svg.selectAll('.bar-group')
-                .data(stackedData);
+            // Color mapping for action types
+            const colorMap = {
+                'loanApplications': '#3b82f6',  // blue
+                'collateralTopUps': '#8b5cf6',  // purple
+                'births': '#10b981',            // green
+                'deaths': '#ef4444'             // red
+            };
 
-            const barGroupsEnter = barGroups.enter()
+            // Bind data to stacked areas
+            const series = svg.selectAll('.series')
+                .data(stackedSeries);
+
+            const seriesEnter = series.enter()
                 .append('g')
-                .attr('class', 'bar-group');
+                .attr('class', 'series');
 
-            const barGroupsMerged = barGroupsEnter.merge(barGroups);
+            const seriesMerged = seriesEnter.merge(series);
 
-            // Update bar positions
-            barGroupsMerged
-                .attr('transform', d => `translate(${xScale(d.timestamp)}, 0)`);
+            // Remove old series
+            series.exit().remove();
 
-            // Remove old bars
-            barGroups.exit().remove();
+            // Create bars for each series
+            const bars = seriesMerged.selectAll('.bar')
+                .data(d => d);
 
-            // Success bars (bottom)
-            const successBars = barGroupsMerged.selectAll('.success-bar')
-                .data(d => [d]);
-
-            successBars.enter()
+            bars.enter()
                 .append('rect')
-                .attr('class', 'success-bar')
-                .merge(successBars)
-                .attr('x', -8)
-                .attr('y', d => yScale(d.success))
+                .attr('class', 'bar')
+                .merge(bars)
+                .attr('x', d => xScale(d.data.timestamp) - 8)
+                .attr('y', d => yScale(d[1]))
                 .attr('width', 16)
-                .attr('height', d => chartHeight - yScale(d.success))
-                .attr('fill', '#10b981');
+                .attr('height', d => yScale(d[0]) - yScale(d[1]))
+                .attr('fill', (d, i, nodes) => {
+                    const seriesData = d3.select(nodes[i].parentNode).datum();
+                    return colorMap[seriesData.key];
+                });
 
-            successBars.exit().remove();
-
-            // Failed bars (top)
-            const failedBars = barGroupsMerged.selectAll('.failed-bar')
-                .data(d => [d]);
-
-            failedBars.enter()
-                .append('rect')
-                .attr('class', 'failed-bar')
-                .merge(failedBars)
-                .attr('x', -8)
-                .attr('y', d => yScale(d.total))
-                .attr('width', 16)
-                .attr('height', d => yScale(d.success) - yScale(d.total))
-                .attr('fill', '#ef4444');
-
-            failedBars.exit().remove();
+            bars.exit().remove();
         }
 
         function updateActorPerformanceCards() {
             const container = document.getElementById('actorPerformanceContainer');
-            const actors = Array.from(actorPerformanceData.entries()).map(([id, data]) => ({
-                id,
-                ...data,
-                successRate: data.totalActions > 0 ? (data.successfulActions / data.totalActions * 100) : 0
-            }));
+            const actors = Array.from(actorPerformanceData.entries()).map(([id, data]) => {
+                const businessActions = (data.loanApplications || 0) + (data.collateralTopUps || 0);
+                const businessActionRate = data.totalActions > 0 ? (businessActions / data.totalActions * 100) : 0;
+                
+                return {
+                    id,
+                    ...data,
+                    businessActions,
+                    businessActionRate
+                };
+            });
 
             // Sort by total actions (most active first)
             actors.sort((a, b) => b.totalActions - a.totalActions);
@@ -932,22 +972,26 @@
                     <div class="space-y-2">
                         <div class="flex justify-between text-xs">
                             <span>Total Actions:</span>
-                            <span class="font-bold">${actor.totalActions}</span>
+                            <span class="font-bold">${actor.totalActions || 0}</span>
                         </div>
                         <div class="flex justify-between text-xs">
-                            <span>Successful:</span>
-                            <span class="text-green-400 font-bold">${actor.successfulActions}</span>
+                            <span>Loan Apps:</span>
+                            <span class="text-blue-400 font-bold">${actor.loanApplications || 0}</span>
                         </div>
                         <div class="flex justify-between text-xs">
-                            <span>Failed:</span>
-                            <span class="text-red-400 font-bold">${actor.failedActions}</span>
+                            <span>Collateral:</span>
+                            <span class="text-purple-400 font-bold">${actor.collateralTopUps || 0}</span>
                         </div>
                         <div class="flex justify-between text-xs">
-                            <span>Success Rate:</span>
-                            <span class="font-bold">${actor.successRate.toFixed(1)}%</span>
+                            <span>Lifecycle:</span>
+                            <span class="text-green-400 font-bold">${(actor.births || 0) + (actor.deaths || 0)}</span>
+                        </div>
+                        <div class="flex justify-between text-xs">
+                            <span>Business Activity:</span>
+                            <span class="font-bold">${actor.businessActionRate.toFixed(1)}%</span>
                         </div>
                         <div class="w-full bg-gray-700 rounded-full h-2">
-                            <div class="bg-green-500 h-2 rounded-full" style="width: ${actor.successRate}%"></div>
+                            <div class="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full" style="width: ${actor.businessActionRate}%"></div>
                         </div>
                     </div>
                 </div>
