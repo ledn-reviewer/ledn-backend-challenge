@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Create SNS topic
+echo "Creating SNS topic: coruscant-bank-loan-events"
+aws --endpoint-url=http://localhost:4566 sns create-topic --name coruscant-bank-loan-events
+
+# Create SQS queue
+echo "Creating SQS queue: coruscant-bank-loan-queue"
+aws --endpoint-url=http://localhost:4566 sqs create-queue --queue-name coruscant-bank-loan-queue
+
+# Subscribe SQS queue to SNS topic
+echo "Subscribing SQS queue to SNS topic"
+TOPIC_ARN=$(aws --endpoint-url=http://localhost:4566 sns list-topics --query 'Topics[0].TopicArn' --output text)
+QUEUE_URL=$(aws --endpoint-url=http://localhost:4566 sqs get-queue-url --queue-name coruscant-bank-loan-queue --query 'QueueUrl' --output text)
+QUEUE_ARN=$(aws --endpoint-url=http://localhost:4566 sqs get-queue-attributes --queue-url $QUEUE_URL --attribute-names QueueArn --query 'Attributes.QueueArn' --output text)
+
+aws --endpoint-url=http://localhost:4566 sns subscribe \
+    --topic-arn $TOPIC_ARN \
+    --protocol sqs \
+    --notification-endpoint $QUEUE_ARN
+
+echo "LocalStack initialization complete!"

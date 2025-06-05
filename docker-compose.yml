@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  localstack:
+    image: localstack/localstack:latest
+    container_name: localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=sns,sqs
+      - DEBUG=1
+      - DATA_DIR=/tmp/localstack/data
+    volumes:
+      - ./localstack:/docker-entrypoint-initaws.d
+      - ./tmp/localstack:/tmp/localstack
+
+  coruscant-bank-otc-service:
+    build:
+      context: ./apps/coruscant-bank-otc-service
+      dockerfile: Dockerfile
+    container_name: coruscant-bank-otc-service
+    ports:
+      - "3001:3000"
+    environment:
+      - AWS_ENDPOINT=http://localstack:4566
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - ENABLE_SELF_PUBLISHING=false
+    depends_on:
+      - localstack
+
+  black-spire-outpost-trading-service:
+    build:
+      context: ./apps/black-spire-outpost-trading-service
+      dockerfile: Dockerfile
+    container_name: black-spire-outpost-trading-service
+    ports:
+      - "3002:3000"
+    environment:
+      - AWS_ENDPOINT=http://localstack:4566
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    depends_on:
+      - localstack
+
+  mos-espa-trading-service:
+    build:
+      context: ./apps/mos-espa-trading-service
+      dockerfile: Dockerfile
+    container_name: mos-espa-trading-service
+    ports:
+      - "3003:3000"
+    environment:
+      - AWS_ENDPOINT=http://localstack:4566
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    depends_on:
+      - localstack
