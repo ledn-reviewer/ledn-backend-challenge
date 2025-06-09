@@ -242,7 +242,7 @@ export class ClientActor {
       } else {
         // Non-202 status code means failure - add to failed actions to prevent retries
         this.failedActions.add('CREATE_LOAN');
-        
+
         this.emitAction(
           ClientActionType.CREATE_LOAN,
           {
@@ -266,7 +266,7 @@ export class ClientActor {
     } catch (error) {
       // Network error or other exception means failure - add to failed actions to prevent retries
       this.failedActions.add('CREATE_LOAN');
-      
+
       this.emitAction(
         ClientActionType.CREATE_LOAN,
         {
@@ -380,7 +380,7 @@ export class ClientActor {
       } else {
         // Non-202 status code means failure - add to failed actions to prevent retries
         this.failedActions.add(`TOP_UP_${loanId}`);
-        
+
         this.emitAction(
           ClientActionType.TOP_UP_COLLATERAL,
           {
@@ -403,7 +403,7 @@ export class ClientActor {
     } catch (error) {
       // Network error or other exception means failure - add to failed actions to prevent retries
       this.failedActions.add(`TOP_UP_${loanId}`);
-      
+
       this.emitAction(
         ClientActionType.TOP_UP_COLLATERAL,
         {

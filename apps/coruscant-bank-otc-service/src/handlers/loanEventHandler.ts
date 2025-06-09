@@ -107,11 +107,92 @@ export class LoanEventHandler implements SQSMessageHandler {
 
   private async processLoanApplication(event: LoanEvent): Promise<void> {
     logger.info({ requestId: event.requestId }, 'Processing loan application');
-    // Implementation will be added later
+    
+    try {
+      // Extract loan application data from the event
+      const { loanId, borrowerId, amount } = event.data as {
+        loanId: string;
+        borrowerId: string;
+        amount: string;
+      };
+
+      // Log the loan application details
+      logger.info(
+        { 
+          requestId: event.requestId,
+          loanId,
+          borrowerId,
+          amount 
+        }, 
+        'Loan application received'
+      );
+
+      // Here we could:
+      // 1. Validate the loan application
+      // 2. Update internal loan tracking
+      // 3. Send notifications or responses
+      // 4. Trigger business logic (e.g., risk assessment, activation)
+      
+      // For now, we'll just log successful processing
+      logger.info(
+        { requestId: event.requestId, loanId },
+        'Loan application processed successfully'
+      );
+    } catch (error) {
+      logger.error(
+        { 
+          requestId: event.requestId, 
+          error: error instanceof Error ? error.message : 'Unknown error' 
+        },
+        'Failed to process loan application'
+      );
+      throw error;
+    }
   }
 
   private async processCollateralTopUp(event: LoanEvent): Promise<void> {
     logger.info({ requestId: event.requestId }, 'Processing collateral top-up');
-    // Implementation will be added later
+    
+    try {
+      // Extract collateral top-up data from the event
+      const { loanId, borrowerId, amount } = event.data as {
+        loanId: string;
+        borrowerId: string;
+        amount: string;
+      };
+
+      // Log the collateral top-up details
+      logger.info(
+        { 
+          requestId: event.requestId,
+          loanId,
+          borrowerId,
+          amount 
+        }, 
+        'Collateral top-up received'
+      );
+
+      // Here we could:
+      // 1. Validate the collateral top-up request
+      // 2. Update loan collateral tracking
+      // 3. Recalculate loan-to-value (LTV) ratio
+      // 4. Check if loan needs to be activated or moved out of liquidation risk
+      // 5. Send notifications or responses
+      
+      // For now, we'll just log successful processing
+      logger.info(
+        { requestId: event.requestId, loanId },
+        'Collateral top-up processed successfully'
+      );
+    } catch (error) {
+      logger.error(
+        { 
+          requestId: event.requestId, 
+          error: error instanceof Error ? error.message : 'Unknown error' 
+        },
+        'Failed to process collateral top-up'
+      );
+      throw error;
+    }
   }
 }

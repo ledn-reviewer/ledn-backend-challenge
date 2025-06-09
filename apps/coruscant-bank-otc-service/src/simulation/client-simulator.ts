@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { ClientActor } from './actors/client-actor';
-import { SimplePriceService } from './services/price-service';
+import { PriceSubscriber } from './services/price-service';
 import { ClientEvents, ClientActionType } from './models/types';
 import logger from '../utils/logger';
 
@@ -11,7 +11,6 @@ export interface ClientSimulatorConfig {
   maxClients: number;
   actionIntervalMs: number;
   apiBaseUrl: string;
-  priceServiceApiEndpoint?: string;
 }
 
 /**
@@ -21,7 +20,7 @@ export class ClientSimulator {
   private config: ClientSimulatorConfig;
   private clients: Map<string, ClientActor>;
   private events: ClientEvents;
-  private priceService: SimplePriceService;
+  private priceService: PriceSubscriber;
   private isRunning: boolean;
   private statistics: {
     loanApplications: number;
@@ -38,7 +37,7 @@ export class ClientSimulator {
     this.config = config;
     this.clients = new Map();
     this.events = new EventEmitter() as ClientEvents;
-    this.priceService = new SimplePriceService(10000, 0.08, config.priceServiceApiEndpoint);
+    this.priceService = new PriceSubscriber();
     this.isRunning = false;
     this.statistics = {
       loanApplications: 0,
@@ -253,11 +252,6 @@ export class ClientSimulator {
     // Update API endpoint if provided
     if (config.apiBaseUrl !== undefined) {
       this.config.apiBaseUrl = config.apiBaseUrl;
-    }
-
-    if (config.priceServiceApiEndpoint !== undefined) {
-      this.config.priceServiceApiEndpoint = config.priceServiceApiEndpoint;
-      this.priceService = new SimplePriceService(10000, 0.08, config.priceServiceApiEndpoint);
     }
   }
 

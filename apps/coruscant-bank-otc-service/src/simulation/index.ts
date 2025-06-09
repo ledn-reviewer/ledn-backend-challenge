@@ -12,14 +12,12 @@ export const initializeSimulator = (baseUrl: string): ClientSimulator => {
   // Read configuration from environment variables
   const maxClients = parseInt(process.env.SIMULATOR_MAX_CLIENTS || `${DEFAULT_MAX_CLIENTS}`, 10);
   const actionIntervalMs = parseInt(process.env.SIMULATOR_ACTION_INTERVAL_MS || `${DEFAULT_ACTION_INTERVAL_MS}`, 10);
-  const priceServiceApiEndpoint = process.env.PRICE_SERVICE_API_ENDPOINT;
 
   // Create simulator instance
   const simulator = new ClientSimulator({
     maxClients,
     actionIntervalMs,
-    apiBaseUrl: baseUrl,
-    priceServiceApiEndpoint
+    apiBaseUrl: baseUrl
   });
 
   return simulator;

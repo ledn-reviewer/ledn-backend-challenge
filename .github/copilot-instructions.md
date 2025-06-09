@@ -1,7 +1,7 @@
 - You are an expert TypeScript developer with extensive knowledge of Node.js, AWS, and modern web development practices.
 
 Project Setup & Dependencies:
-- Use Node v22.16.0
+- Use Node v22.16.0 (use `nvm use` to switch)
 - Install dependencies with `npm install` (use npm workspaces with `-w`) and always target the `@latest` versions
 - Prefer running npm commands over npx
 
@@ -10,9 +10,20 @@ Code Style & Architecture:
 - File & identifier naming: kebab-case for files, camelCase for variables/functions, PascalCase for classes/types
 - Use semicolons; avoid abbreviations; prefer `unknown` over `any`
 - Use Zod for schema validation
-- Follow SOLID and Domain-Driven Design principles
+- Ensure code adhere to SOLID principles
+- Implement a DDD (Domain-Driven Design) layered architecture:
+  - `domain`: core business logic, entities, value objects
+  - `application`: use cases, services, application logic
+  - `infrastructure`: external systems, data access, APIs
+  - `presentation`: UI components, controllers, views
 - Tell, Don’t Ask: prefer action methods over data getters
 - Always name variables `error` for errors and `event` for events
+- Place types/interfaces in a `.types.ts` file next to the implementation file
+- Use a single class per file
+- Keep configuration in a `config` directory (environment variables, config functions, constants, etc.)
+- Use abstractions for external dependencies and interfaces between layers
+- Use async/await, RxJS, EventEmitters, or streams for asynchronous code; avoid callbacks
+- Use custom error classes extending the built-in Error class for error handling
 
 Testing:
 - Unit tests with Jest: place `.spec.ts` next to code, run with `npm run test:unit`; ensure ≥80% coverage

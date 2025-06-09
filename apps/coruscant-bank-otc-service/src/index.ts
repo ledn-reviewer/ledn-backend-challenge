@@ -2,29 +2,37 @@ import express from 'express';
 import dotenv from 'dotenv';
 import * as http from 'http';
 import path from 'path';
+import axios from 'axios';
 import { receiveAndProcessMessages } from './services/sqs/consumer';
 import { subscribeSqsToSnsTopic } from './services/sns/subscriber';
 import { LoanEventHandler, LoanEventStore } from './handlers/loanEventHandler';
 import { setupSwaggerUI } from './config/openapi';
-import { createApiRouter } from './routes/api';
+import { createApiRouter, setFakeLiquidationService } from './routes/api';
 import { createSimulationRouter } from './routes/simulation-api';
 import { createEventHistoryRouter } from './routes/event-history-api';
 import { createDashboardRouter } from './routes/dashboard-api';
 import { initializeSimulator, autoStartSimulatorIfEnabled } from './simulation';
 import { EventHistoryStore } from './utils/event-store';
 import { requestLogger } from './middleware/logging';
-import { isSelfPublishingEnabled } from './services/sns/publisher';
+import { isSelfPublishingEnabled } from './config/aws';
 import { DashboardWebSocketService } from './services/websocket/dashboard-websocket';
+import { FakeLiquidationService } from './services/fake-liquidation-service';
+import { PricePublisher } from './services/price-publisher';
 import logger from './utils/logger';
 
 // Load environment variables
 dotenv.config();
+
+// Set default timeout for all axios requests to 2.5 seconds
+axios.defaults.timeout = 2500;
 
 // Initialize application
 const app = express();
 const server: http.Server = http.createServer(app);
 let isShuttingDown = false;
 let dashboardWebSocket: DashboardWebSocketService;
+let fakeLiquidationService: FakeLiquidationService | undefined;
+let pricePublisher: PricePublisher | undefined;
 
 app.use(express.json());
 
@@ -42,9 +50,8 @@ const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 const maxInMemoryEvents = parseInt(process.env.MAX_IN_MEMORY_EVENTS || '1000');
 const selfPublishingEnabled = isSelfPublishingEnabled();
 
-// Initialize event handler and event stores
+// Initialize event handler and event store
 const loanEventHandler = new LoanEventHandler();
-const eventStore = LoanEventStore.getInstance();
 const eventHistoryStore = EventHistoryStore.getInstance({
   maxInMemoryEvents
 });
@@ -137,6 +144,17 @@ const gracefulShutdown = async (signal: string): Promise<void> => {
       dashboardWebSocket.stop();
     }
 
+    // Stop fake services if running
+    if (fakeLiquidationService) {
+      logger.info('Stopping fake liquidation service');
+      fakeLiquidationService.stop();
+    }
+
+    if (pricePublisher) {
+      logger.info('Stopping price publisher');
+      pricePublisher.stop();
+    }
+
     // Stop accepting new connections
     logger.info('Closing HTTP server');
     server.close(() => {
@@ -180,7 +198,7 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason) => {
   logger.fatal({ reason }, 'Unhandled promise rejection detected');
   process.exit(1);
 });
@@ -189,6 +207,23 @@ process.on('unhandledRejection', (reason, promise) => {
 server.listen(port, () => {
   // Initialize WebSocket service after server starts
   dashboardWebSocket = new DashboardWebSocketService(server, clientSimulator);
+
+  // Initialize fake services if self-publishing is enabled
+  if (selfPublishingEnabled) {
+    fakeLiquidationService = new FakeLiquidationService();
+
+    // Create the price publisher with an initial price of 10000 and 6% volatility
+    pricePublisher = new PricePublisher(undefined, 10000, 0.06);
+
+    // Set the global reference for API routes
+    setFakeLiquidationService(fakeLiquidationService);
+
+    // Start the services
+    fakeLiquidationService.start();
+    pricePublisher.start();
+
+    logger.info('Started fake liquidation service and price publisher');
+  }
 
   logger.info(
     {

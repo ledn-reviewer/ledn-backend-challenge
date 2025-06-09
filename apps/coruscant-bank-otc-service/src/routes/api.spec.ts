@@ -1,7 +1,7 @@
 import express from 'express';
 import request from 'supertest';
 import { createApiRouter } from './api';
-import * as snsPublisher from '../services/sns/publisher';
+import { isSelfPublishingEnabled } from '../config/aws';
 import { LoanEventStore } from '../handlers/loanEventHandler';
 import { EventHistoryStore } from '../utils/event-store';
 import axios from 'axios';
@@ -11,9 +11,22 @@ jest.mock('axios');
 jest.mock('../services/sns/publisher');
 jest.mock('../handlers/loanEventHandler');
 jest.mock('../utils/event-store');
+jest.mock('../config/aws');
+
+// Mock EventPublisher class
+const mockPublishEvent = jest.fn().mockResolvedValue('event-id-123');
+jest.mock('../services/sns/event-publisher', () => {
+  return {
+    EventPublisher: jest.fn().mockImplementation(() => {
+      return {
+        publishEvent: mockPublishEvent
+      };
+    })
+  };
+});
 
 const mockedAxios = axios as jest.Mocked<typeof axios>;
-const mockedSnsPublisher = snsPublisher as jest.Mocked<typeof snsPublisher>;
+const mockedIsSelfPublishingEnabled = isSelfPublishingEnabled as jest.MockedFunction<typeof isSelfPublishingEnabled>;
 
 describe('API Router', () => {
   let app: express.Application;
@@ -23,17 +36,17 @@ describe('API Router', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Set liquidation service URL for tests
     process.env.LIQUIDATION_SERVICE_URL = 'http://localhost:4000';
-    
+
     // Setup mocks
     processedRequests = new Set<string>();
-    
+
     mockEventStore = {
       getEvents: jest.fn().mockReturnValue([])
     } as unknown as jest.Mocked<LoanEventStore>;
-    
+
     mockEventHistoryStore = {
       getEvents: jest.fn().mockReturnValue([]),
       getEventById: jest.fn()
@@ -41,10 +54,13 @@ describe('API Router', () => {
 
     (LoanEventStore.getInstance as jest.Mock).mockReturnValue(mockEventStore);
     (EventHistoryStore.getInstance as jest.Mock).mockReturnValue(mockEventHistoryStore);
-    
-    mockedSnsPublisher.publishLoanEvent.mockResolvedValue('event-id-123');
-    mockedSnsPublisher.isSelfPublishingEnabled.mockReturnValue(false);
-    
+
+    // Reset mock for publishEvent
+    mockPublishEvent.mockClear();
+    mockPublishEvent.mockResolvedValue('event-id-123');
+
+    mockedIsSelfPublishingEnabled.mockReturnValue(false);
+
     mockedAxios.post.mockResolvedValue({ data: { message: 'success' } });
 
     // Setup Express app with router
@@ -76,7 +92,7 @@ describe('API Router', () => {
         publishedToSNS: false
       });
 
-      expect(mockedSnsPublisher.publishLoanEvent).toHaveBeenCalledWith({
+      expect(mockPublishEvent).toHaveBeenCalledWith({
         eventType: 'LOAN_APPLICATION',
         requestId: validLoanApplication.requestId,
         data: validLoanApplication,
@@ -92,7 +108,7 @@ describe('API Router', () => {
     it('should use custom liquidation service URL from environment', async () => {
       const originalUrl = process.env.LIQUIDATION_SERVICE_URL;
       process.env.LIQUIDATION_SERVICE_URL = 'http://custom-service:8080';
-      
+
       // Recreate app with new environment
       app = express();
       app.use(express.json());
@@ -153,7 +169,7 @@ describe('API Router', () => {
     });
 
     it('should return 500 when SNS publishing fails', async () => {
-      mockedSnsPublisher.publishLoanEvent.mockRejectedValue(new Error('SNS Error'));
+      mockPublishEvent.mockRejectedValue(new Error('SNS Error'));
 
       const response = await request(app)
         .post('/api/loan-applications')
@@ -181,8 +197,8 @@ describe('API Router', () => {
     });
 
     it('should indicate SNS publishing when enabled', async () => {
-      mockedSnsPublisher.isSelfPublishingEnabled.mockReturnValue(true);
-      
+      mockedIsSelfPublishingEnabled.mockReturnValue(true);
+
       // Recreate app to pick up new publishing setting
       app = express();
       app.use(express.json());
@@ -219,7 +235,7 @@ describe('API Router', () => {
         publishedToSNS: false
       });
 
-      expect(mockedSnsPublisher.publishLoanEvent).toHaveBeenCalledWith({
+      expect(mockPublishEvent).toHaveBeenCalledWith({
         eventType: 'COLLATERAL_TOP_UP',
         requestId: validTopUp.requestId,
         data: validTopUp,
@@ -250,7 +266,7 @@ describe('API Router', () => {
     });
 
     it('should return 500 when processing fails', async () => {
-      mockedSnsPublisher.publishLoanEvent.mockRejectedValue(new Error('Processing Error'));
+      mockPublishEvent.mockRejectedValue(new Error('Processing Error'));
 
       const response = await request(app)
         .post('/api/collateral-top-ups')
@@ -283,8 +299,8 @@ describe('API Router', () => {
     });
 
     it('should show SNS publishing enabled when configured', async () => {
-      mockedSnsPublisher.isSelfPublishingEnabled.mockReturnValue(true);
-      
+      mockedIsSelfPublishingEnabled.mockReturnValue(true);
+
       // Recreate app to pick up new setting
       app = express();
       app.use(express.json());
@@ -314,7 +330,7 @@ describe('API Router', () => {
         { id: '1', type: 'LOAN_APPLICATION', data: {} },
         { id: '2', type: 'COLLATERAL_TOP_UP', data: {} }
       ];
-      
+
       mockEventStore.getEvents.mockReturnValue(mockEvents as never[]);
 
       const response = await request(app)
@@ -333,7 +349,7 @@ describe('API Router', () => {
         { id: '1', type: 'LOAN_APPLICATION', direction: 'OUTBOUND' as const, data: {}, timestamp: '2023-01-01T00:00:00Z' },
         { id: '2', type: 'COLLATERAL_TOP_UP', direction: 'INBOUND' as const, data: {}, timestamp: '2023-01-01T00:00:00Z' }
       ];
-      
+
       mockEventHistoryStore.getEvents.mockReturnValue(mockEvents);
 
       const response = await request(app)

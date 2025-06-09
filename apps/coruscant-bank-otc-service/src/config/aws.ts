@@ -16,3 +16,6 @@ export const awsConfig = {
 // SNS/SQS Resource names
 export const LOAN_EVENTS_TOPIC = process.env.LOAN_EVENTS_TOPIC || 'coruscant-bank-loan-events';
 export const LOAN_QUEUE_NAME = process.env.LOAN_QUEUE_NAME || 'coruscant-bank-loan-queue';
+
+// Feature flags
+export const isSelfPublishingEnabled = (): boolean => process.env.ENABLE_SELF_PUBLISHING === 'true';
