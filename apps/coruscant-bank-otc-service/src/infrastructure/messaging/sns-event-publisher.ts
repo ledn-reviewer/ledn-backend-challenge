@@ -1,24 +1,21 @@
 import { EventPublisher } from '../../application/interfaces/event-publisher';
 import { DomainEvent } from '../../domain/events/domain-event';
-import { SNSPublisher } from '../../services/sns/publisher';
-import { LOAN_EVENTS_TOPIC_ARN } from '../../helpers/aws';
+import { SnsPublisher } from './sns-publisher';
 import logger from '../../utils/logger';
 
 export class SnsEventPublisher implements EventPublisher {
-  constructor(private readonly snsPublisher: SNSPublisher) {}
+  constructor(private readonly snsPublisher: SnsPublisher) {}
 
   public async publish(event: DomainEvent): Promise<void> {
     try {
-      const topicName = LOAN_EVENTS_TOPIC_ARN.split(':').pop() || '';
-      const messageId = await this.snsPublisher.publish(topicName, event.toPrimitives());
+      await this.snsPublisher.publish(event);
       
       logger.info({
-        messageId,
         eventId: event.eventId,
         eventType: event.eventType
       }, 'Domain event published to SNS');
     } catch (error) {
-      logger.error({ error, event: event.toPrimitives() }, 'Failed to publish domain event');
+      logger.error({ error, eventType: event.eventType }, 'Failed to publish domain event');
       throw error;
     }
   }

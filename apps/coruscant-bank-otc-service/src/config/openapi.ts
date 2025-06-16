@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import YAML from 'js-yaml';
-import { Express } from 'express';
+import { Application } from 'express';
 import swaggerUi from 'swagger-ui-express';
 import logger from '../utils/logger';
 
@@ -29,7 +29,7 @@ export const loadOpenApiSchema = (): OpenAPISchema => {
 };
 
 // Setup Swagger UI
-export const setupSwaggerUI = (app: Express): void => {
+export const setupSwaggerUI = (app: Application): void => {
   try {
     const openApiSchema = loadOpenApiSchema();
 

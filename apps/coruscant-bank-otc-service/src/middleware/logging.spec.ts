@@ -39,11 +39,11 @@ describe('Logging Middleware', () => {
     };
 
     // Setup mock response with event emitter functionality
-    const eventListeners: { [key: string]: Function[] } = {};
+    const eventListeners: { [key: string]: ((...args: unknown[]) => void)[] } = {};
     mockResponse = {
       statusCode: 200,
       locals: {},
-      on: jest.fn((event: string, callback: Function) => {
+      on: jest.fn((event: string, callback: (...args: unknown[]) => void) => {
         if (!eventListeners[event]) {
           eventListeners[event] = [];
         }

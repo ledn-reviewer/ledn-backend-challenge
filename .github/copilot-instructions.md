@@ -18,12 +18,13 @@ Code Style & Architecture:
   - `presentation`: UI components, controllers, views
 - Tell, Don’t Ask: prefer action methods over data getters
 - Always name variables `error` for errors and `event` for events
-- Place types/interfaces in a `.types.ts` file next to the implementation file
+- Save types and interfaces to a `.types.ts` file, preferably next to the implementation file
 - Use a single class per file
 - Keep configuration in a `config` directory (environment variables, config functions, constants, etc.)
 - Use abstractions for external dependencies and interfaces between layers
 - Use async/await, RxJS, EventEmitters, or streams for asynchronous code; avoid callbacks
 - Use custom error classes extending the built-in Error class for error handling
+- Avoid creating singletons for application-wide use; prefer dependency injection
 
 Testing:
 - Unit tests with Jest: place `.spec.ts` next to code, run with `npm run test:unit`; ensure ≥80% coverage

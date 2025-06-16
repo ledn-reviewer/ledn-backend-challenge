@@ -10,7 +10,8 @@ import { InMemoryLoanRepository } from '../persistence/in-memory-loan-repository
 import { InMemoryBorrowerRepository } from '../persistence/in-memory-borrower-repository';
 import { SnsEventPublisher } from '../messaging/sns-event-publisher';
 import { HttpLiquidationService } from '../http/http-liquidation-service';
-import { SNSPublisher } from '../../services/sns/publisher';
+import { SnsPublisher } from '../messaging/sns-publisher';
+import { SnsClientFactory } from '../factories/sns-client-factory';
 
 export class DependencyContainer {
   private static instance: DependencyContainer;
@@ -81,10 +82,15 @@ export class DependencyContainer {
     );
 
     // Infrastructure services
-    this.services.set('SNSPublisher', new SNSPublisher());
+    const snsClient = SnsClientFactory.create();
+    const snsPublisher = new SnsPublisher(
+      snsClient,
+      this.configService.getLoanEventsTopicArn()
+    );
+    this.services.set('SNSPublisher', snsPublisher);
     this.services.set(
       'EventPublisher',
-      new SnsEventPublisher(this.get<SNSPublisher>('SNSPublisher'))
+      new SnsEventPublisher(snsPublisher)
     );
     this.services.set(
       'LiquidationService',

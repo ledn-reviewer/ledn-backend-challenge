@@ -2,7 +2,6 @@
 
 import fs from 'fs';
 import { execSync } from 'child_process';
-import path from 'path';
 
 console.log('Test Diagnostics Script');
 console.log('======================\n');
@@ -18,8 +17,8 @@ console.log('Jest Configuration:');
 try {
   const jestConfig = fs.readFileSync('jest.config.js', 'utf8');
   console.log(jestConfig);
-} catch (error) {
-  console.error('Error reading jest.config.js:', error);
+} catch {
+  console.error('Error reading jest.config.js');
 }
 console.log('\n');
 
@@ -30,7 +29,7 @@ try {
     stdio: 'inherit'
   });
   console.log(jestOutput || 'Command executed successfully');
-} catch (error) {
+} catch {
   console.error('Error running Jest - check the error output above');
 }
 

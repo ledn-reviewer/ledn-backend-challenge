@@ -12,7 +12,6 @@ import { LoanRiskAssessmentService } from '../../domain/services/loan-risk-asses
 import { EventPublisher } from '../interfaces/event-publisher';
 import { LiquidationService } from '../interfaces/liquidation-service';
 import { InsufficientCollateralException } from '../../domain/exceptions/loan-exceptions';
-import { ExternalServiceException } from '../exceptions/application-exceptions';
 
 export interface SubmitLoanApplicationRequest {
   requestId: string;

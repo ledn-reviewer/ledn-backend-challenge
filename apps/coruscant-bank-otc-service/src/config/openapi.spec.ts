@@ -3,6 +3,7 @@ import path from 'path';
 import YAML from 'js-yaml';
 import express from 'express';
 import swaggerUi from 'swagger-ui-express';
+import * as openapi from './openapi';
 import { loadOpenApiSchema, setupSwaggerUI } from './openapi';
 import logger from '../utils/logger';
 
@@ -115,7 +116,7 @@ describe('OpenAPI Configuration', () => {
       };
 
       // Mock loadOpenApiSchema
-      jest.spyOn(require('./openapi'), 'loadOpenApiSchema').mockReturnValue(mockSchema);
+      jest.spyOn(openapi, 'loadOpenApiSchema').mockReturnValue(mockSchema);
 
       setupSwaggerUI(mockApp);
 
@@ -155,7 +156,7 @@ describe('OpenAPI Configuration', () => {
       process.env.PORT = '8080';
       const mockSchema = { openapi: '3.0.0', info: { title: 'Test API' } };
 
-      jest.spyOn(require('./openapi'), 'loadOpenApiSchema').mockReturnValue(mockSchema);
+      jest.spyOn(openapi, 'loadOpenApiSchema').mockReturnValue(mockSchema);
 
       setupSwaggerUI(mockApp);
 
@@ -179,7 +180,7 @@ describe('OpenAPI Configuration', () => {
         // No servers array
       };
 
-      jest.spyOn(require('./openapi'), 'loadOpenApiSchema').mockReturnValue(mockSchema);
+      jest.spyOn(openapi, 'loadOpenApiSchema').mockReturnValue(mockSchema);
 
       setupSwaggerUI(mockApp);
 
@@ -212,7 +213,7 @@ describe('OpenAPI Configuration', () => {
         servers: [...existingServers]
       };
 
-      jest.spyOn(require('./openapi'), 'loadOpenApiSchema').mockReturnValue(mockSchema);
+      jest.spyOn(openapi, 'loadOpenApiSchema').mockReturnValue(mockSchema);
 
       setupSwaggerUI(mockApp);
 
@@ -235,7 +236,7 @@ describe('OpenAPI Configuration', () => {
         servers: [...existingServers]
       };
 
-      jest.spyOn(require('./openapi'), 'loadOpenApiSchema').mockReturnValue(mockSchema);
+      jest.spyOn(openapi, 'loadOpenApiSchema').mockReturnValue(mockSchema);
 
       setupSwaggerUI(mockApp);
 
@@ -261,7 +262,7 @@ describe('OpenAPI Configuration', () => {
         servers: [...existingServers]
       };
 
-      jest.spyOn(require('./openapi'), 'loadOpenApiSchema').mockReturnValue(mockSchema);
+      jest.spyOn(openapi, 'loadOpenApiSchema').mockReturnValue(mockSchema);
 
       setupSwaggerUI(mockApp);
 
@@ -279,7 +280,7 @@ describe('OpenAPI Configuration', () => {
     it('should configure swagger options correctly', () => {
       const mockSchema = { openapi: '3.0.0', info: { title: 'Test API' } };
 
-      jest.spyOn(require('./openapi'), 'loadOpenApiSchema').mockReturnValue(mockSchema);
+      jest.spyOn(openapi, 'loadOpenApiSchema').mockReturnValue(mockSchema);
 
       setupSwaggerUI(mockApp);
 
@@ -297,7 +298,7 @@ describe('OpenAPI Configuration', () => {
 
     it('should handle errors during setup and rethrow them', () => {
       const mockError = new Error('Setup failed');
-      jest.spyOn(require('./openapi'), 'loadOpenApiSchema').mockImplementation(() => {
+      jest.spyOn(openapi, 'loadOpenApiSchema').mockImplementation(() => {
         throw mockError;
       });
 
@@ -309,7 +310,7 @@ describe('OpenAPI Configuration', () => {
       const mockSchema = { openapi: '3.0.0', info: { title: 'Test API' } };
       const setupError = new Error('Swagger setup failed');
 
-      jest.spyOn(require('./openapi'), 'loadOpenApiSchema').mockReturnValue(mockSchema);
+      jest.spyOn(openapi, 'loadOpenApiSchema').mockReturnValue(mockSchema);
       mockedSwaggerUi.setup.mockImplementation(() => {
         throw setupError;
       });
@@ -322,7 +323,7 @@ describe('OpenAPI Configuration', () => {
       const mockSchema = { openapi: '3.0.0', info: { title: 'Test API' } };
       const middlewareError = new Error('Middleware registration failed');
 
-      jest.spyOn(require('./openapi'), 'loadOpenApiSchema').mockReturnValue(mockSchema);
+      jest.spyOn(openapi, 'loadOpenApiSchema').mockReturnValue(mockSchema);
       mockApp.use.mockImplementation(() => {
         throw middlewareError;
       });
@@ -361,7 +362,7 @@ describe('OpenAPI Configuration', () => {
         use: jest.fn()
       } as unknown as jest.Mocked<express.Express>;
 
-      jest.spyOn(require('./openapi'), 'loadOpenApiSchema').mockReturnValue(complexSchema);
+      jest.spyOn(openapi, 'loadOpenApiSchema').mockReturnValue(complexSchema);
 
       setupSwaggerUI(mockApp);
 

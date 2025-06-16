@@ -66,6 +66,10 @@ export class ConfigurationService {
     return this.config.loanEventsTopic;
   }
 
+  public getLoanEventsTopicArn(): string {
+    return `arn:aws:sns:${this.config.awsRegion}:000000000000:${this.config.loanEventsTopic}`;
+  }
+
   public getLoanQueueName(): string {
     return this.config.loanQueueName;
   }

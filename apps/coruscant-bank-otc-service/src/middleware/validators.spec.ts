@@ -1,6 +1,5 @@
 import { Request, Response } from 'express';
 import { validateLoanApplicationRequest, validateCollateralTopUpRequest } from './validators';
-import { z } from 'zod';
 
 describe('Validation Middleware', () => {
   let req: Partial<Request>;

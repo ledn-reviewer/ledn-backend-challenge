@@ -65,7 +65,7 @@ export class Application {
     this.app.use(requestLogger);
 
     // Setup Swagger UI
-    setupSwaggerUI(this.app as any);
+    setupSwaggerUI(this.app);
   }
 
   private setupRoutes(): void {

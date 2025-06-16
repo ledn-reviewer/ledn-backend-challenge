@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { loadOpenApiSchema } from '../config/openapi';
 import logger from '../utils/logger';
 
 // Create Zod schemas based on OpenAPI definitions
